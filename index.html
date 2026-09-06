@@ -1,1 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splunk Enterprise Multi-Cluster Architecture & Complete Knowledge System</title>
+    <style>
+        :root {
+            --bg-base: #070a13;
+            --bg-secondary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #0a0f1d;
+            --border: #334155;
+            --border-highlight: #38bdf8;
+            --accent-green: #10b981;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f97316;
+            --accent-purple: #c084fc;
+            --accent-pink: #f43f5e;
+            --accent-yellow: #facc15;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 2px solid var(--border);
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--accent-green);
+            white-space: nowrap;
+        }
+
+        .mode-nav {
+            display: flex;
+            background: var(--bg-input);
+            padding: 2px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 5px 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-blue);
+            color: var(--bg-base);
+        }
+
+        .search-container {
+            flex: 1;
+            max-width: 320px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 6px 10px 6px 30px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .search-input:focus { border-color: var(--accent-blue); }
+
+        .search-icon {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            fill: var(--text-muted);
+            width: 13px;
+            height: 13px;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 38px;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-blue);
+            border-radius: 6px;
+            max-height: 380px;
+            overflow-y: auto;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover { background: var(--bg-card); }
+        .dropdown-q { font-size: 0.8rem; font-weight: 600; color: var(--accent-blue); }
+        .dropdown-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 50px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: radial-gradient(circle at center, #131c2d 0%, #070a13 100%);
+            overflow: hidden;
+            position: relative;
+            cursor: grab;
+        }
+
+        .canvas-container:active { cursor: grabbing; }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 18px;
+            left: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+        }
+
+        .zoom-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        .sim-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .sim-label { font-size: 0.74rem; font-weight: 700; color: var(--accent-orange); text-transform: uppercase; }
+
+        .sim-select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            outline: none;
+            flex: 1;
+            max-width: 520px;
+        }
+
+        .sim-btn-trigger {
+            background: var(--accent-pink);
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sim-btn-reset {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            cursor: pointer;
+        }
+
+        #viewportGroup { transform-origin: 0 0; }
+        svg { width: 100%; height: 100%; user-select: none; }
+
+        .tier-bg { fill: rgba(30, 41, 59, 0.28); stroke: var(--border); stroke-width: 1.5; stroke-dasharray: 4 4; rx: 10; }
+        .mgmt-column-bg { fill: rgba(19, 27, 46, 0.6); stroke: #475569; stroke-width: 1.5; stroke-dasharray: 5 3; rx: 12; }
+        .tier-title { fill: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+        .node { cursor: pointer; transition: all 0.2s; }
+        .node rect { rx: 6; stroke-width: 1.5; fill: #111a2e; }
+        .node text.title { fill: #ffffff; font-size: 12px; font-weight: 600; }
+        .node text.desc { fill: var(--text-muted); font-size: 10px; }
+
+        .node:hover rect { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7)); }
+        .node.active rect { stroke: #ffffff !important; stroke-width: 2.5 !important; filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.9)); }
+        
+        .node.alarm-red rect { stroke: var(--accent-red) !important; fill: rgba(239, 68, 68, 0.22) !important; filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.9)); animation: pulseAlarm 1.4s infinite; }
+        .node.alarm-amber rect { stroke: var(--accent-orange) !important; fill: rgba(249, 115, 22, 0.2) !important; filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.8)); }
+
+        @keyframes pulseAlarm {
+            0%, 100% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.35; }
+        }
+
+        .pipe-line { stroke-width: 1.5; stroke-dasharray: 4 2; animation: flowAnim 15s linear infinite; fill: none; }
+        .pipe-severed { stroke: var(--accent-red) !important; stroke-dasharray: 2 4 !important; animation: none !important; opacity: 0.4; }
+
+        @keyframes flowAnim { to { stroke-dashoffset: -100; } }
+
+        .sidebar {
+            width: 580px;
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: relative;
+            transition: width 0.3s;
+        }
+
+        .sidebar.closed { display: none; }
+
+        .sidebar-header {
+            padding: 12px 18px;
+            background: rgba(11, 15, 25, 0.7);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title { font-size: 1.05rem; color: var(--accent-blue); font-weight: 700; }
+        .sidebar-tag { font-size: 0.72rem; color: var(--accent-green); background: var(--bg-card); padding: 2px 7px; border-radius: 8px; font-weight: 600; margin-top: 3px; display: inline-block; }
+        .close-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 1.1rem; line-height: 1; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+        .close-btn:hover { color: #fff; background: var(--bg-card); border-color: var(--accent-pink); }
+
+        .open-sidebar-btn {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 5px 11px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 50;
+        }
+
+        .sidebar-content {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .card { background: var(--bg-base); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+        .card.alarm-card { border-color: var(--accent-red); background: rgba(239, 68, 68, 0.08); }
+        .card-heading { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .code-box { background: #000000; border-radius: 4px; padding: 7px 9px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--accent-blue); margin-top: 5px; overflow-x: auto; line-height: 1.35; white-space: pre; }
+        
+        .bullet-list { list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 0.81rem; color: #d1d5db; }
+        .bullet-list li { padding-left: 12px; position: relative; line-height: 1.4; }
+        .bullet-list li::before { content: "•"; position: absolute; left: 0; color: var(--accent-orange); font-weight: bold; }
+
+        .cascade-step {
+            border-left: 2px solid var(--accent-blue);
+            padding-left: 10px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+        .cascade-layer { font-weight: 700; color: var(--accent-blue); font-size: 0.76rem; }
+        .cascade-val { font-family: var(--font-mono); color: var(--text-main); }
+        .cascade-winner { border-left-color: var(--accent-green); }
+        .cascade-winner .cascade-layer { color: var(--accent-green); }
+
+        .packet-stage-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            cursor: pointer;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+        .packet-stage-btn.active {
+            background: var(--accent-blue);
+            color: var(--bg-base);
+            font-weight: 700;
+        }
+
+        .generator-select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 7px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            outline: none;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Splunk Distributed Studio
+        </div>
+
+        <div class="mode-nav">
+            <button class="mode-btn active" onclick="switchToolView('inspector')">Inspector</button>
+            <button class="mode-btn" onclick="switchToolView('packet')">Packet Tracer</button>
+            <button class="mode-btn" onclick="switchToolView('mapreduce')">MapReduce</button>
+            <button class="mode-btn" onclick="switchToolView('bundlediff')">Bundle Diff</button>
+            <button class="mode-btn" onclick="switchToolView('generator')">Stanza Gen</button>
+            <button class="mode-btn" onclick="switchToolView('cascade')">Btool Tree</button>
+            <button class="mode-btn" onclick="switchToolView('simulator')">Failure Sim (15)</button>
+        </div>
+
+        <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search architecture, search affinity, btool, KV store...">
+            <div id="dropdownPanel" class="dropdown"></div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <button id="openSidebarBtn" class="open-sidebar-btn" onclick="toggleSidebar(true)">← Open Drawer</button>
+
+        <div class="canvas-container" id="canvasStage">
+            
+            <div class="sim-bar" id="simFloatingBar" style="display: none;">
+                <span class="sim-label">Failure Injection:</span>
+                <select class="sim-select" id="simScenarioSelect">
+                    <option value="site1_drop">01. Disaster Recovery: Site 1 Peer Indexer Cluster Outage</option>
+                    <option value="captain_partition">02. SHC Consensus: Captain Lost / Raft Quorum Split-Brain</option>
+                    <option value="forwarder_block">03. Ingestion Queue: Port 9997 Saturation / Blocked Pipe</option>
+                    <option value="smartstore_thrash">04. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash</option>
+                    <option value="license_violation">05. License Violations: 5 Daily Pool Breaches / Search Locked</option>
+                    <option value="indexer_disk_full">06. Peer Storage: minFreeSpace Breached (Ingestion Halted)</option>
+                    <option value="bucket_fixup_storm">07. Indexer Cluster: Flapping Peer Triggers Fixup Storm</option>
+                    <option value="deployer_conflict">08. SHC Deployer: App Push Bundle Overwrites CSV Lookups</option>
+                    <option value="shc_out_of_sync">09. Search Head Desync: Member Falls Out of Raft Replication</option>
+                    <option value="port_drop_9997">10. Firewall Drop: Port 9997 Drops Ingestion Traffic</option>
+                    <option value="wan_latency_spike">11. Inter-Site WAN Latency: Bucket Replication Times Out (9887)</option>
+                    <option value="fishbucket_corrupt">12. Forwarder Loop: Fishbucket Corruption Causes Re-indexing</option>
+                    <option value="search_bundle_exhaust">13. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space</option>
+                    <option value="cm_split_brain">14. Management Partition: Cluster Manager Unreachable by SHC</option>
+                    <option value="hec_queue_overflow">15. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow</option>
+                </select>
+                <button class="sim-btn-trigger" onclick="runSimulation()">Inject Outage</button>
+                <button class="sim-btn-reset" onclick="resetSimulation()">Reset Topology</button>
+            </div>
+
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomCanvas(1.15)" title="Zoom In">+</button>
+                <button class="zoom-btn" onclick="zoomCanvas(0.85)" title="Zoom Out">−</button>
+                <button class="zoom-btn" onclick="resetZoom()" title="Reset Canvas">⟲</button>
+            </div>
+
+            <svg id="architectureSvg" viewBox="0 0 1060 880">
+                <g id="viewportGroup">
+                    
+                    <rect x="810" y="20" width="220" height="840" class="mgmt-column-bg"/>
+                    <text x="825" y="44" class="tier-title" fill="#c084fc">Management Plane</text>
+
+                    <g class="node" id="node-shc_deployer" onclick="selectComponent('shc_deployer')">
+                        <rect x="825" y="65" width="190" height="110" stroke="#f43f5e"/>
+                        <path d="M 837 77 l 5 -3 l 5 3 l -5 3 z M 837 80 l 5 3 l 0 6 l -5 -3 z M 847 80 l -5 3 l 0 6 l 5 -3 z" fill="none" stroke="#f43f5e" stroke-width="1.2"/>
+                        <text x="852" y="85" class="title">SHC Deployer</text>
+                        <text x="835" y="110" class="desc">Distributes App Baselines</text>
+                        <text x="835" y="130" class="desc">to Search Head Cluster</text>
+                        <text x="835" y="155" class="desc" fill="#f43f5e">shcluster/apps</text>
+                    </g>
+
+                    <g class="node" id="node-cm" onclick="selectComponent('cm')">
+                        <rect x="825" y="325" width="190" height="120" stroke="#c084fc"/>
+                        <circle cx="840" cy="341" r="3.5" fill="none" stroke="#c084fc" stroke-width="1.2"/>
+                        <circle cx="834" cy="351" r="2.5" fill="none" stroke="#c084fc" stroke-width="1.2"/>
+                        <circle cx="846" cy="351" r="2.5" fill="none" stroke="#c084fc" stroke-width="1.2"/>
+                        <path d="M 840 344 L 834 348 M 840 344 L 846 348" stroke="#c084fc" stroke-width="1.2"/>
+                        <text x="853" y="347" class="title">Cluster Manager (CM)</text>
+                        <text x="835" y="372" class="desc">Peer State & Bucket Fixup</text>
+                        <text x="835" y="392" class="desc">Pushes Indexer Bundle</text>
+                        <text x="835" y="422" class="desc" fill="#c084fc">master-apps / _cluster</text>
+                    </g>
+
+                    <g class="node" id="node-ds" onclick="selectComponent('ds')">
+                        <rect x="825" y="590" width="190" height="105" stroke="#f97316"/>
+                        <rect x="835" y="601" width="10" height="8" rx="1" fill="none" stroke="#f97316" stroke-width="1.2"/>
+                        <path d="M 837 613 l 6 0 M 840 609 l 0 4" stroke="#f97316" stroke-width="1.2"/>
+                        <text x="850" y="610" class="title">Deployment Server (DS)</text>
+                        <text x="835" y="635" class="desc">Forwarder App Delivery</text>
+                        <text x="835" y="655" class="desc">serverclass.conf</text>
+                        <text x="835" y="675" class="desc" fill="#f97316">deployment-apps</text>
+                    </g>
+
+                    <g class="node" id="node-lm" onclick="selectComponent('lm')">
+                        <rect x="825" y="720" width="190" height="90" stroke="#64748b"/>
+                        <rect x="835" y="731" width="10" height="12" rx="1.5" fill="none" stroke="#64748b" stroke-width="1.2"/>
+                        <path d="M 838 737 l 4 0 M 838 739 l 3 0" stroke="#64748b" stroke-width="1.2"/>
+                        <text x="850" y="742" class="title">License Manager</text>
+                        <text x="835" y="765" class="desc">Enterprise Pool Quotas</text>
+                        <text x="835" y="785" class="desc" fill="#94a3b8">Daily Ingest Tracking</text>
+                    </g>
+
+                    <path id="pipe-deployer-shc" d="M 825 120 L 700 120" stroke="#f43f5e" stroke-dasharray="3 3"/>
+                    <text x="720" y="112" font-size="9" fill="#f43f5e">shcluster-bundle</text>
+
+                    <path id="pipe-cm-idx" d="M 825 385 L 700 385" stroke="#c084fc" stroke-dasharray="3 3"/>
+                    <text x="725" y="377" font-size="9" fill="#c084fc">cluster-bundle</text>
+
+                    <path id="pipe-ds-uf" d="M 825 645 L 700 645" stroke="#f97316" stroke-dasharray="3 3"/>
+                    <text x="728" y="637" font-size="9" fill="#f97316">phoneHome</text>
+
+                    <rect x="20" y="20" width="680" height="200" class="tier-bg"/>
+                    <text x="35" y="44" class="tier-title">Tier 3: Search Head Cluster (SHC) - Search Affinity & KV Store</text>
+
+                    <g class="node" id="node-sh_captain" onclick="selectComponent('sh_captain')">
+                        <rect x="35" y="65" width="205" height="135" stroke="#38bdf8"/>
+                        <polygon points="46,84 48,76 52,80 56,76 58,84" fill="none" stroke="#38bdf8" stroke-width="1.2"/>
+                        <text x="64" y="83" class="title">SHC Captain (Site 1)</text>
+                        <text x="45" y="106" class="desc">Scheduler & KV Store Primary</text>
+                        <text x="45" y="126" class="desc">Raft Engine (Port 8089)</text>
+                        <text x="45" y="148" class="desc" fill="#38bdf8">Search Affinity: Site 1 Target</text>
+                        <text x="45" y="168" class="desc" fill="#94a3b8">users/ & apps/local/</text>
+                        <text x="45" y="186" class="desc" fill="#10b981">Local TSIDX Read (No WAN)</text>
+                    </g>
+
+                    <g class="node" id="node-sh_member1" onclick="selectComponent('sh_member')">
+                        <rect x="260" y="65" width="205" height="135" stroke="#38bdf8"/>
+                        <circle cx="273" cy="80" r="4.5" fill="none" stroke="#38bdf8" stroke-width="1.2"/>
+                        <line x1="276" y1="83" x2="280" y2="87" stroke="#38bdf8" stroke-width="1.2"/>
+                        <text x="286" y="83" class="title">SH Member (Site 1)</text>
+                        <text x="270" y="106" class="desc">Ad-hoc Search Dispatch</text>
+                        <text x="270" y="126" class="desc">Artifact Replication</text>
+                        <text x="270" y="148" class="desc" fill="#38bdf8">Queries Local Site 1 Peers</text>
+                        <text x="270" y="168" class="desc" fill="#94a3b8">KV Store Member (8191)</text>
+                        <text x="270" y="186" class="desc" fill="#10b981">distsearch.conf: site1</text>
+                    </g>
+
+                    <g class="node" id="node-sh_member2" onclick="selectComponent('sh_member')">
+                        <rect x="485" y="65" width="200" height="135" stroke="#38bdf8"/>
+                        <circle cx="498" cy="80" r="4.5" fill="none" stroke="#38bdf8" stroke-width="1.2"/>
+                        <line x1="501" y1="83" x2="505" y2="87" stroke="#38bdf8" stroke-width="1.2"/>
+                        <text x="511" y="83" class="title">SH Member (Site 2)</text>
+                        <text x="495" y="106" class="desc">Ad-hoc Search Dispatch</text>
+                        <text x="495" y="126" class="desc">Artifact Replication</text>
+                        <text x="495" y="148" class="desc" fill="#38bdf8">Search Affinity: Site 2 Peers</text>
+                        <text x="495" y="168" class="desc" fill="#94a3b8">KV Store Member (8191)</text>
+                        <text x="495" y="186" class="desc" fill="#10b981">distsearch.conf: site2</text>
+                    </g>
+
+                    <path id="pipe-shc-site1" d="M 140 280 L 140 220" stroke="#38bdf8" class="pipe-line"/>
+                    <path id="pipe-shc-site2" d="M 580 280 L 580 220" stroke="#38bdf8" class="pipe-line"/>
+                    <text x="240" y="250" font-size="10" fill="#38bdf8">Search Affinity: Local Search Factor Read (Zero WAN Traffic)</text>
+
+                    <rect x="20" y="280" width="680" height="240" class="tier-bg"/>
+                    <text x="35" y="304" class="tier-title">Tier 2: Multi-Site Indexer Cluster (Hot/Warm/TSIDX & Inter-Site WAN Replication)</text>
+
+                    <g class="node" id="node-idx_site1" onclick="selectComponent('idx_site1')">
+                        <rect x="35" y="325" width="205" height="175" stroke="#10b981"/>
+                        <path d="M 45 339 c 0 -2 4 -3 7 -3 s 7 1 7 3 v 7 c 0 2 -4 3 -7 3 s -7 -1 -7 -3 z" fill="none" stroke="#10b981" stroke-width="1.2"/>
+                        <ellipse cx="52" cy="339" rx="7" ry="2" fill="none" stroke="#10b981" stroke-width="1.2"/>
+                        <text x="64" y="347" class="title">Site 1 Indexer Peers</text>
+                        <text x="45" y="370" class="desc">Active Ingestion Target</text>
+                        <text x="45" y="390" class="desc">Hot Bucket Storage (Local NVMe)</text>
+                        <text x="45" y="415" class="desc" fill="#10b981">Local RF: site1:2 (Raw Copies)</text>
+                        <text x="45" y="435" class="desc" fill="#38bdf8">Local SF: site1:1 (Searchable)</text>
+                        <text x="45" y="460" class="desc" fill="#94a3b8">WAN Replication -> (Port 9887)</text>
+                        <text x="45" y="480" class="desc" fill="#facc15">SmartStore offload on warm roll</text>
+                    </g>
+
+                    <g class="node" id="node-idx_site2" onclick="selectComponent('idx_site2')">
+                        <rect x="260" y="325" width="205" height="175" stroke="#10b981"/>
+                        <path d="M 270 339 c 0 -2 4 -3 7 -3 s 7 1 7 3 v 7 c 0 2 -4 3 -7 3 s -7 -1 -7 -3 z" fill="none" stroke="#10b981" stroke-width="1.2"/>
+                        <ellipse cx="277" cy="339" rx="7" ry="2" fill="none" stroke="#10b981" stroke-width="1.2"/>
+                        <text x="289" y="347" class="title">Site 2 Indexer (DR / Active)</text>
+                        <text x="270" y="370" class="desc">Disaster Recovery & Active Read</text>
+                        <text x="270" y="390" class="desc">WAN Replicated Buckets</text>
+                        <text x="270" y="415" class="desc" fill="#10b981">Local RF: site2:2 (Raw Copies)</text>
+                        <text x="270" y="435" class="desc" fill="#38bdf8">Local SF: site2:1 (Searchable)</text>
+                        <text x="270" y="460" class="desc" fill="#94a3b8">Receives Port 9887 Raw Stream</text>
+                        <text x="270" y="480" class="desc" fill="#10b981">Search Affinity Ready for Site 2</text>
+                    </g>
+
+                    <g class="node" id="node-smartstore" onclick="selectComponent('smartstore')">
+                        <rect x="485" y="325" width="200" height="175" stroke="#facc15"/>
+                        <path d="M 495 344 a 3 3 0 0 1 5 -2 a 4 4 0 0 1 7 1 a 3 3 0 0 1 4 3 a 2 2 0 0 1 -2 2 l -13 0 a 2 2 0 0 1 -1 -4 z" fill="none" stroke="#facc15" stroke-width="1.2"/>
+                        <text x="516" y="347" class="title">SmartStore (Remote Tier)</text>
+                        <text x="495" y="370" class="desc">Canonical Object Storage</text>
+                        <text x="495" y="390" class="desc">AWS S3 / GCS / Azure Blob</text>
+                        <text x="495" y="415" class="desc" fill="#facc15">Warm/Cold Remote Offload</text>
+                        <text x="495" y="435" class="desc" fill="#94a3b8">CacheManager LRU Eviction</text>
+                        <text x="495" y="460" class="desc" fill="#94a3b8">Single Storage Copy Across Sites</text>
+                        <text x="495" y="480" class="desc" fill="#38bdf8">Fetches metadata on demand</text>
+                    </g>
+
+                    <path id="pipe-idx-wan" d="M 240 412 L 260 412" stroke="#10b981" stroke-width="2" class="pipe-line"/>
+
+                    <path id="pipe-uf-site1" d="M 140 580 L 140 520" stroke="#10b981" class="pipe-line"/>
+                    <path id="pipe-hf-site2" d="M 360 580 L 360 520" stroke="#10b981" class="pipe-line"/>
+                    <path id="pipe-hec-smart" d="M 580 580 L 580 520" stroke="#10b981" class="pipe-line"/>
+                    <text x="260" y="555" font-size="10" fill="#10b981">Cooked Ingestion Stream (Port 9997 AutoLB + useACK=true)</text>
+
+                    <rect x="20" y="580" width="680" height="280" class="tier-bg"/>
+                    <text x="35" y="604" class="tier-title">Tier 1: Ingestion Tier (Forwarders, Ingress & Topology Expansion)</text>
+
+                    <g class="node" id="node-uf" onclick="selectComponent('uf')">
+                        <rect x="35" y="625" width="205" height="150" stroke="#10b981"/>
+                        <path d="M 45 641 l 6 0 l 0 -3 l 4 4 l -4 4 l 0 -3 l -6 0 z" fill="#10b981"/>
+                        <text x="60" y="645" class="title">Universal Forwarder (UF)</text>
+                        <text x="45" y="670" class="desc">Monitors Logs, Syslog, Metrics</text>
+                        <text x="45" y="690" class="desc">No Parsing (Lightweight C++)</text>
+                        <text x="45" y="715" class="desc" fill="#10b981">AutoLB Across Peer Nodes</text>
+                        <text x="45" y="735" class="desc" fill="#94a3b8">Indexer Discovery Enabled</text>
+                        <text x="45" y="755" class="desc" fill="#f97316">outputs.conf & inputs.conf</text>
+                    </g>
+
+                    <g class="node" id="node-hf" onclick="selectComponent('hf')">
+                        <rect x="260" y="625" width="205" height="150" stroke="#10b981"/>
+                        <circle cx="271" cy="641" r="3.5" fill="none" stroke="#10b981" stroke-width="1.2"/>
+                        <path d="M 271 635 l 0 2 M 271 645 l 0 2 M 265 641 l 2 0 M 275 641 l 2 0" stroke="#10b981" stroke-width="1.2"/>
+                        <text x="282" y="645" class="title">Heavy Forwarder (HF)</text>
+                        <text x="270" y="670" class="desc">Full Splunk Instance (No Indexing)</text>
+                        <text x="270" y="690" class="desc">Line Breaking, Masking, Routing</text>
+                        <text x="270" y="715" class="desc" fill="#10b981">Index-Time Parsing Pipeline</text>
+                        <text x="270" y="735" class="desc" fill="#94a3b8">props.conf & transforms.conf</text>
+                        <text x="270" y="755" class="desc" fill="#f97316">nullQueue Routing & SEDCMD</text>
+                    </g>
+
+                    <g class="node" id="node-hec" onclick="selectComponent('hec')">
+                        <rect x="485" y="625" width="200" height="150" stroke="#10b981"/>
+                        <path d="M 498 634 l -4 6 l 4 0 l -2 7 l 7 -8 l -5 0 z" fill="#38bdf8"/>
+                        <text x="509" y="645" class="title">HTTP Event Collector (HEC)</text>
+                        <text x="495" y="670" class="desc">Direct REST API Ingestion</text>
+                        <text x="495" y="690" class="desc">CloudWatch, K8s, Serverless</text>
+                        <text x="495" y="715" class="desc" fill="#38bdf8">Token-Based Authentication</text>
+                        <text x="495" y="735" class="desc" fill="#94a3b8">Port 8088 direct to LB/Peers</text>
+                        <text x="495" y="755" class="desc" fill="#f97316">Channel-Based useACK=true</text>
+                    </g>
+                </g>
+            </svg>
+        </div>
+
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div>
+                    <div class="sidebar-title" id="sideTitle">Search Head Cluster Captain</div>
+                    <div class="sidebar-tag" id="sideTag">Tier 3: Search Head Cluster</div>
+                </div>
+                <button class="close-btn" onclick="toggleSidebar(false)" title="Close Drawer">×</button>
+            </div>
+            <div class="sidebar-content" id="sideContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentZoom = 1;
+        let panX = 0, panY = 0;
+        let isPanning = false;
+        let startX, startY;
+        let activeToolView = 'inspector';
+
+        const viewportGroup = document.getElementById('viewportGroup');
+        const canvasStage = document.getElementById('canvasStage');
+
+        canvasStage.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.sim-bar') || e.target.closest('.zoom-controls')) return;
+            isPanning = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => { isPanning = false; });
+
+        canvasStage.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY > 0 ? 0.9 : 1.1;
+            zoomCanvas(factor);
+        }, { passive: false });
+
+        function updateTransform() {
+            viewportGroup.setAttribute('transform', `translate(${panX}, ${panY}) scale(${currentZoom})`);
+        }
+
+        function zoomCanvas(factor) {
+            currentZoom = Math.min(Math.max(0.4, currentZoom * factor), 2.5);
+            updateTransform();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            panX = 0;
+            panY = 0;
+            updateTransform();
+        }
+
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            const openBtn = document.getElementById('openSidebarBtn');
+            if (open) {
+                sidebar.classList.remove('closed');
+                openBtn.style.display = 'none';
+            } else {
+                sidebar.classList.add('closed');
+                openBtn.style.display = 'block';
+            }
+        }
+
+        function switchToolView(viewMode) {
+            activeToolView = viewMode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const simBar = document.getElementById('simFloatingBar');
+            simBar.style.display = (viewMode === 'simulator') ? 'flex' : 'none';
+
+            toggleSidebar(true);
+
+            if (viewMode === 'inspector') {
+                selectComponent('sh_captain');
+            } else if (viewMode === 'packet') {
+                renderPacketTracer();
+            } else if (viewMode === 'mapreduce') {
+                renderMapReduceVisualizer();
+            } else if (viewMode === 'bundlediff') {
+                renderBundleDiffImpact();
+            } else if (viewMode === 'generator') {
+                renderStanzaGenerator();
+            } else if (viewMode === 'cascade') {
+                renderCascadeTree();
+            } else if (viewMode === 'simulator') {
+                renderSimulatorRunbook();
+            }
+        }
+
+        const splunkComponents = {
+            "sh_captain": {
+                name: "SHC Captain (Elected) & Search Affinity",
+                tier: "Tier 3: Search Head Cluster Tier",
+                configs: ["$SPLUNK_HOME/etc/system/local/server.conf ([shclustering])", "$SPLUNK_HOME/etc/system/local/distsearch.conf", "$SPLUNK_HOME/etc/users/", "$SPLUNK_HOME/etc/apps/<app>/local/"],
+                affinityDetails: "Search Affinity enables a Search Head assigned to `site1` to query only `site1` peer indexers for searches, eliminating high-cost inter-site WAN bandwidth. This is made possible because `site_search_factor` ensures at least one complete searchable copy (TSIDX) resides locally on `site1`. If a local site1 indexer crashes, the search head automatically fails over across the WAN to `site2` indexers.",
+                distsearchDetails: "The Search Head compiles queries into a MapReduce bundle, checks index availability, and dispatches sub-searches over Port 8089 to local indexer peers. Peers return transformed results (summarized chunks) rather than raw logs, drastically reducing network transmission.",
+                koDetails: "Runtime Knowledge Objects (Dashboards, Saved Searches, Lookups) are written to $SPLUNK_HOME/etc/users/<user>/ or $SPLUNK_HOME/etc/apps/<app>/local/ and replicated dynamically across members via Raft consensus on Port 8089.",
+                kvstoreDetails: "KV Store operates as an independent MongoDB Replica Set listening on Port 8191. Captaincy in Raft does not strictly dictate the MongoDB primary. Triage status using `splunk show kvstore-status`.",
+                triage: ["splunk show shcluster-status", "splunk show kvstore-status", "splunk transfer shcluster-captain -mgr-uri https://<target>:8089"]
+            },
+            "sh_member": {
+                name: "SHC Member Node",
+                tier: "Tier 3: Search Head Cluster Tier",
+                configs: ["$SPLUNK_HOME/etc/system/local/distsearch.conf", "$SPLUNK_HOME/etc/system/local/server.conf"],
+                affinityDetails: "Search affinity is enabled by setting `site = site1` (or `site2`) in `server.conf` under `[general]` on the search head. To disable search affinity and force global load balancing, set `site = site0`.",
+                distsearchDetails: "Search heads distribute bundles via `distsearch.conf`. Large lookups can saturate dispatch replication; use `replicationBlacklist` in `distsearch.conf` to block large non-indexed CSV tables.",
+                koDetails: "Replicates all runtime knowledge objects in real-time from the Captain over Port 8089.",
+                kvstoreDetails: "Participates in MongoDB replication. Common issue: SSL handshake failures during initial synchronization.",
+                triage: ["splunk resync shcluster-member", "index=_internal sourcetype=splunkd component=ConfReplication"]
+            },
+            "idx_site1": {
+                name: "Site 1 Peer Indexers (Ingestion & Storage)",
+                tier: "Tier 2: Multi-Site Indexing Tier",
+                configs: ["$SPLUNK_HOME/etc/slave-apps/ (deployed by CM)", "$SPLUNK_HOME/etc/system/local/indexes.conf", "$SPLUNK_HOME/etc/system/local/server.conf ([clustering] site=site1)"],
+                forwarderInteraction: "Forwarders connect via Port 9997 using TCP cooked pipelines. When `useACK=true`, the forwarder holds events in memory until the peer indexer flushes the raw slice to disk journal.",
+                replicationDetails: "Once data enters a hot bucket, the indexer streams raw data copies across local peers (`site1:2`) and across the WAN pipe over Port 9887 to Site 2 peers (`site2:2`). Searchable indexers build local `.tsidx` inverted files to satisfy the `site_search_factor`.",
+                newIndexersAdded: "When a new indexer joins: 1) Configure `server.conf` with `mode=peer`, `master_uri`, `pass4SymmKey`, and `site=site1`. 2) Restart Splunk. 3) CM detects peer, registers heartbeats, triggers cluster bundle download from `master-apps`, and begins streaming bucket fixup tasks without restarting the existing cluster.",
+                triage: ["index=_internal sourcetype=splunkd component=BucketReplicator", "splunk list search-server"]
+            },
+            "idx_site2": {
+                name: "Site 2 Peer Indexers (Active & Disaster Recovery)",
+                tier: "Tier 2: Multi-Site Indexing Tier",
+                configs: ["$SPLUNK_HOME/etc/slave-apps/", "$SPLUNK_HOME/etc/system/local/indexes.conf", "$SPLUNK_HOME/etc/system/local/server.conf ([clustering] site=site2)"],
+                forwarderInteraction: "Receives local Site 2 forwarder inputs or acts as failover target when Site 1 forwarders encounter network drops.",
+                replicationDetails: "Receives raw bucket chunks over WAN Port 9887. Rebuilds TSIDX files locally to satisfy Search Factor (`site2:1`), ensuring Search Heads located in Site 2 have zero WAN search penalty.",
+                newIndexersAdded: "Same procedure as Site 1, setting `site = site2` in `server.conf`.",
+                triage: ["index=_internal sourcetype=splunkd peer_site=site2", "splunk show cluster-status"]
+            },
+            "smartstore": {
+                name: "SmartStore Remote Tiering (S3 / GCS / Azure)",
+                tier: "Tier 2: Remote Decoupled Storage Tier",
+                configs: ["$SPLUNK_HOME/etc/system/local/indexes.conf (remotePath = volume:remote_store/$_index_name)", "$SPLUNK_HOME/etc/system/local/server.conf ([cachemanager])"],
+                affinityDetails: "SmartStore stores canonical copies of warm buckets in Cloud Object Storage. Searches leverage local cache; misses fetch metadata chunks from S3.",
+                distsearchDetails: "Decouples storage from compute: Indexers need only retain local NVMe for hot data and cached warm buckets (`max_cache_size`).",
+                koDetails: "Bucket metadata manifests are maintained remotely and cached locally.",
+                triage: ["index=_internal sourcetype=splunkd component=CacheManager", "index=_internal sourcetype=splunkd component=S3BucketStorage"]
+            },
+            "uf": {
+                name: "Universal Forwarder (UF)",
+                tier: "Tier 1: Data Ingestion Tier",
+                configs: ["$SPLUNK_HOME/etc/system/local/inputs.conf", "$SPLUNK_HOME/etc/system/local/outputs.conf", "$SPLUNK_HOME/etc/system/local/deploymentclient.conf"],
+                forwarderInteraction: "Tails files, logs, and metrics. Chunks streams into memory buffers and balances across indexers using AutoLB (`autoLBFrequency=30`). Queries Cluster Manager on Port 8089 via **Indexer Discovery** (`[indexer_discovery:cm_group]`) to dynamically fetch active indexer IP lists.",
+                newForwardersAdded: "When adding new forwarders: 1) Deploy universal forwarder binary. 2) Configure `$SPLUNK_HOME/etc/system/local/deploymentclient.conf` with `targetUri = <DS_IP>:8089`. 3) Restart forwarder. 4) On Deployment Server, update `serverclass.conf` whitelist to include the forwarder hostname. DS automatically delivers app bundles containing `inputs.conf` and `outputs.conf`.",
+                koDetails: "No Knowledge Objects live on UFs.",
+                triage: ["splunk list forward-server", "grep -i 'Blocked' /opt/splunkforwarder/var/log/splunk/splunkd.log", "splunk cmd btool inputs list --debug"]
+            },
+            "hf": {
+                name: "Heavy Forwarder (HF)",
+                tier: "Tier 1: Data Ingestion Tier",
+                configs: ["$SPLUNK_HOME/etc/system/local/props.conf", "$SPLUNK_HOME/etc/system/local/transforms.conf", "$SPLUNK_HOME/etc/apps/"],
+                forwarderInteraction: "Performs UTF-8 line breaking and regex evaluations. Routes unwanted logs to `nullQueue` and masks sensitive data (`SEDCMD`) before sending cooked events to indexers over Port 9997.",
+                newForwardersAdded: "Managed via Deployment Server classes similar to UFs.",
+                koDetails: "Hosts index-time parsing KOs only.",
+                triage: ["index=_internal sourcetype=splunkd group=queue name=parsingqueue", "splunk btool props list --debug"]
+            },
+            "hec": {
+                name: "HTTP Event Collector (HEC)",
+                tier: "Tier 1: Data Ingestion Tier",
+                configs: ["$SPLUNK_HOME/etc/system/local/inputs.conf ([http], [http://<token>])"],
+                forwarderInteraction: "Direct API injection on Port 8088 using HTTP REST calls. Tokens assign sourcetype and index overrides.",
+                newForwardersAdded: "Tokens generated via Splunk Web or `inputs.conf`.",
+                koDetails: "Token definitions reside in `inputs.conf`.",
+                triage: ["HTTP 401 Unauthorized", "HTTP 503 Server Busy", "component=HttpInputDataHandler"]
+            },
+            "ds": {
+                name: "Deployment Server (DS)",
+                tier: "Control & Management Plane (Ingestion)",
+                configs: ["$SPLUNK_HOME/etc/deployment-apps/ (staged packages)", "$SPLUNK_HOME/etc/system/local/serverclass.conf"],
+                forwarderInteraction: "Controls forwarders via phone-home requests (`phoneHomeIntervalInSecs`). Matches client hostnames against `serverclass.conf` whitelist/blacklist rules and pushes application bundles.",
+                commands: ["Deploy / Reload Apps: `splunk reload deploy-server`", "List Connected Forwarders: `splunk list deploy-clients`", "Check Status: `splunk show deploy-server`"],
+                koDetails: "Central store of forwarder configurations.",
+                triage: ["Tune phoneHomeIntervalInSecs in serverclass.conf for large forwarder fleets (>5k clients)."]
+            },
+            "cm": {
+                name: "Cluster Manager (CM / Master)",
+                tier: "Control & Management Plane (Indexers)",
+                configs: ["$SPLUNK_HOME/etc/system/local/server.conf ([clustering])", "$SPLUNK_HOME/etc/master-apps/ (or _cluster/apps)"],
+                newIndexersAdded: "Registers new indexer peers, validates `pass4SymmKey`, checks site affinity, pushes cluster bundles, and triggers data fixup replication.",
+                commands: ["Validate Bundle: `splunk validate cluster-bundle`", "Apply Bundle: `splunk apply cluster-bundle --answer-yes`", "Check Cluster Health: `splunk show cluster-status --verbose`", "Rolling Restart: `splunk rolling-restart cluster-peers`"],
+                koDetails: "Distributes indexing-time props/transforms and indexes.conf to peer indexers.",
+                triage: ["Review fixup tasks: `/services/cluster/manager/health`"]
+            },
+            "shc_deployer": {
+                name: "SHC Deployer",
+                tier: "Control & Management Plane (SHC)",
+                configs: ["$SPLUNK_HOME/etc/shcluster/apps/", "$SPLUNK_HOME/etc/shcluster/users/"],
+                commands: ["Apply SHC Bundle: `splunk apply shcluster-bundle -target https://<sh_member>:8089 -preserve-lookups true`"],
+                koDetails: "Deploys non-runtime app baselines to `$SPLUNK_HOME/etc/apps/` on SHC members.",
+                triage: ["Ensure the Deployer is NEVER a member of the search head cluster."]
+            },
+            "lm": {
+                name: "License Manager (LM)",
+                tier: "Control & Management Plane (Global Ingestion)",
+                configs: ["$SPLUNK_HOME/etc/system/local/server.conf ([license])", "$SPLUNK_HOME/etc/licenses/"],
+                commands: ["List License Slaves: `splunk list licenser-slaves`", "List Pools: `splunk list licenser-pools`"],
+                koDetails: "Monitors daily quota metrics in `_internal`.",
+                triage: ["index=_internal sourcetype=splunkd type=Usage"]
+            }
+        };
+
+        function highlightNode(id) {
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+            const el = document.getElementById('node-' + id);
+            if (el) el.classList.add('active');
+        }
+
+        function selectComponent(key, directQA = null) {
+            if (activeToolView !== 'inspector') switchToolView('inspector');
+            const data = splunkComponents[key];
+            if (!data) return;
+
+            highlightNode(key);
+            toggleSidebar(true);
+
+            document.getElementById('sideTitle').innerText = data.name;
+            document.getElementById('sideTag').innerText = data.tier;
+
+            let qaHtml = "";
+            if (directQA) {
+                qaHtml = `
+                    <div class="card" style="border-color: var(--accent-blue); background: rgba(56, 189, 248, 0.08);">
+                        <div class="card-heading" style="color:var(--accent-blue)">
+                            Direct Answer: ${directQA.q}
+                        </div>
+                        <p style="font-size: 0.82rem; color: #f8fafc; line-height: 1.45;">${directQA.answer}</p>
+                    </div>
+                `;
+            }
+
+            let affinitySection = "";
+            if (data.affinityDetails) {
+                affinitySection = `
+                    <div class="card">
+                        <div class="card-heading">Search Affinity & Distributed Search Execution</div>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;">${data.affinityDetails}</p>
+                        ${data.distsearchDetails ? `<p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;">${data.distsearchDetails}</p>` : ''}
+                    </div>
+                `;
+            }
+
+            let kvstoreSection = "";
+            if (data.kvstoreDetails) {
+                kvstoreSection = `
+                    <div class="card">
+                        <div class="card-heading">KV Store Replica Set Mechanics (Port 8191)</div>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;">${data.kvstoreDetails}</p>
+                    </div>
+                `;
+            }
+
+            let forwarderSection = "";
+            if (data.forwarderInteraction) {
+                forwarderSection = `
+                    <div class="card">
+                        <div class="card-heading">Forwarder-to-Indexer Communication & Ingestion</div>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;">${data.forwarderInteraction}</p>
+                        ${data.replicationDetails ? `<p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;"><b>Inter-Site Bucket Replication:</b> ${data.replicationDetails}</p>` : ''}
+                    </div>
+                `;
+            }
+
+            let expansionSection = "";
+            if (data.newForwardersAdded || data.newIndexersAdded) {
+                expansionSection = `
+                    <div class="card">
+                        <div class="card-heading">Adding New Nodes (.conf Files Modified)</div>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;">${data.newForwardersAdded || data.newIndexersAdded}</p>
+                    </div>
+                `;
+            }
+
+            let commandsSection = "";
+            if (data.commands) {
+                commandsSection = `
+                    <div class="card">
+                        <div class="card-heading">Operational Deployment & Sync Commands</div>
+                        <ul class="bullet-list">
+                            ${data.commands.map(c => `<li><code>${c}</code></li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            let html = `
+                ${qaHtml}
+                <div class="card">
+                    <div class="card-heading">Configuration Paths (.conf)</div>
+                    ${data.configs.map(cfg => `<div class="code-box">${cfg}</div>`).join('')}
+                </div>
+
+                ${affinitySection}
+                ${kvstoreSection}
+                ${forwarderSection}
+                ${expansionSection}
+                ${commandsSection}
+
+                <div class="card">
+                    <div class="card-heading">Knowledge Objects (KO) Handling</div>
+                    <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.4;">${data.koDetails}</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Diagnostic CLI Runbook</div>
+                    <ul class="bullet-list">
+                        ${data.triage.map(t => `<li><code>${t}</code></li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            document.getElementById('sideContent').innerHTML = html;
+        }
+
+        function renderPacketTracer() {
+            document.getElementById('sideTitle').innerText = "Ingestion Packet Tracer";
+            document.getElementById('sideTag').innerText = "End-to-End Data Pipeline";
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card">
+                    <div class="card-heading">Interactive Pipeline Stages</div>
+                    <div>
+                        <button class="packet-stage-btn active" onclick="setPacketStage(1)">Stage 1: Source Tail</button>
+                        <button class="packet-stage-btn" onclick="setPacketStage(2)">Stage 2: Cooked AutoLB</button>
+                        <button class="packet-stage-btn" onclick="setPacketStage(3)">Stage 3: Hot Slice</button>
+                        <button class="packet-stage-btn" onclick="setPacketStage(4)">Stage 4: WAN Replicate</button>
+                        <button class="packet-stage-btn" onclick="setPacketStage(5)">Stage 5: SmartStore S3</button>
+                    </div>
+                </div>
+                <div class="card" id="packetStageDetails"></div>
+            `;
+            setPacketStage(1);
+        }
+
+        const packetStages = {
+            1: {
+                title: "Stage 1: Input Ingestion & Fishbucket Pointer",
+                desc: "The Universal Forwarder reads bytes from the log file via `inputs.conf`. It calculates SHA1 hashes of initial chunks and registers byte offsets in the fishbucket database (`$SPLUNK_HOME/var/lib/splunk/fishbucket/splunk_dirsize.db`). This guarantees zero event duplication across forwarder restarts.",
+                nodes: ["node-uf"]
+            },
+            2: {
+                title: "Stage 2: Cooked Channel & AutoLB Socket Switch",
+                desc: "Data chunks enter memory buffers. The forwarder queries its cached Indexer Discovery list (fetched from the Cluster Manager) and transmits 64KB cooked blocks over Port 9997. If `useACK=true` is enabled, the buffer is preserved in memory awaiting indexer disk acknowledgment.",
+                nodes: ["node-uf", "node-idx_site1"]
+            },
+            3: {
+                title: "Stage 3: Hot Bucket Append & Local TSIDX Inversion",
+                desc: "The target Indexer receives cooked blocks, verifies timestamp boundaries, writes the raw compressed slice into the `.journal.zst` file, and builds inverted term indexes (`.tsidx`). It sends an acknowledgment packet back to the forwarder, clearing the memory buffer.",
+                nodes: ["node-idx_site1"]
+            },
+            4: {
+                title: "Stage 4: Intra-Cluster & WAN Inter-Site Replication",
+                desc: "To meet Replication Factor (`site1:2, site2:2`), the primary indexer streams raw data over Port 9887 across the WAN pipe to Site 2 indexers. Site 2 builds a local `.tsidx` file if Search Factor requires it, ensuring zero WAN penalty during search.",
+                nodes: ["node-idx_site1", "node-idx_site2"]
+            },
+            5: {
+                title: "Stage 5: Hot-to-Warm Roll & SmartStore Remote Upload",
+                desc: "When the hot bucket reaches `maxDataSize` (10GB) or time limits, it rolls to warm. SmartStore uploads the compressed journal and TSIDX files directly to remote S3/GCS object storage via multi-part API calls, leaving a local cached copy governed by CacheManager.",
+                nodes: ["node-idx_site1", "node-smartstore"]
+            }
+        };
+
+        function setPacketStage(stageNum) {
+            document.querySelectorAll('.packet-stage-btn').forEach((b, idx) => {
+                b.classList.toggle('active', idx === stageNum - 1);
+            });
+            const st = packetStages[stageNum];
+            document.getElementById('packetStageDetails').innerHTML = `
+                <div class="card-heading">${st.title}</div>
+                <p style="font-size:0.81rem; color:#cbd5e1; line-height:1.45;">${st.desc}</p>
+            `;
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+            st.nodes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('active');
+            });
+        }
+
+        function renderMapReduceVisualizer() {
+            document.getElementById('sideTitle').innerText = "Search MapReduce Execution";
+            document.getElementById('sideTag').innerText = "Query Processing Engine";
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card">
+                    <div class="card-heading">Sample Enterprise SPL Query</div>
+                    <div class="code-box">index=security action=blocked | stats count by src_ip</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Phase 1: Search Head Dispatch & Bundle Creation</div>
+                    <p style="font-size:0.81rem; color:#cbd5e1; line-height:1.45;">
+                        The Search Head parses the SPL, generates a search ID (SID), and creates a dispatch directory in <code>$SPLUNK_HOME/var/run/splunk/dispatch/&lt;sid&gt;/</code>. It inspects Search Affinity (local site1 preference) and sends the distributed search command to local indexer peers over Port 8089.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Phase 2: Indexer Peer Map Phase (Local Scan & Prestats)</div>
+                    <p style="font-size:0.81rem; color:#cbd5e1; line-height:1.45;">
+                        Indexer peers scan local inverted <code>.tsidx</code> files for <code>action=blocked</code>. Instead of returning gigabytes of raw events, indexer worker processes execute the streaming map command locally, producing intermediate aggregated slices (<code>prestats</code>).
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Phase 3: Search Head Reduce Phase & Final Aggregation</div>
+                    <p style="font-size:0.81rem; color:#cbd5e1; line-height:1.45;">
+                        Indexer peers stream intermediate prestats back to the Search Head. The Search Head executes the reduce operation, merging the count hashes per <code>src_ip</code> into the final summary table displayed in the user UI.
+                    </p>
+                </div>
+            `;
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+            document.getElementById('node-sh_captain').classList.add('active');
+            document.getElementById('node-idx_site1').classList.add('active');
+        }
+
+        const bundleDiffScenarios = {
+            "indexes_add": {
+                name: "Adding new index in master-apps/_cluster/indexes.conf",
+                type: "Indexer Cluster Bundle",
+                impact: "Online Reload (Zero Downtime)",
+                restartRequired: false,
+                diff: `--- old/indexes.conf
++++ new/indexes.conf
+@@ -12,0 +13,5 @@
++[app_prod_logs]
++homePath = $SPLUNK_DB/app_prod_logs/db
++coldPath = $SPLUNK_DB/app_prod_logs/colddb
++thawedPath = $SPLUNK_DB/app_prod_logs/thaweddb
++maxDataSize = auto_high_volume`,
+                explanation: "Cluster Manager validates bundle syntax and broadcasts the update. Peer indexers create new storage directories on the fly without restarting splunkd."
+            },
+            "server_auth_change": {
+                name: "Modifying pass4SymmKey or clustering ports in server.conf",
+                type: "Indexer Cluster Bundle",
+                impact: "Rolling Restart Required",
+                restartRequired: true,
+                diff: `--- old/server.conf
++++ new/server.conf
+@@ -3,2 +3,2 @@
+ [clustering]
+-pass4SymmKey = OldSecretKey_123!
++pass4SymmKey = NewRotatedSecretKey_456!`,
+                explanation: "Network socket bindings, TLS cipher changes, and clustering secret changes require process recycling. CM orchestrates a sequential rolling restart across peers while maintaining search availability."
+            },
+            "props_search_time": {
+                name: "Adding search-time field extractions to props.conf in shcluster/apps",
+                type: "Search Head Cluster Bundle",
+                impact: "Online Reload (Instant)",
+                restartRequired: false,
+                diff: `--- old/props.conf
++++ new/props.conf
+@@ -15,0 +16,2 @@
++[cisco:firewall]
++EXTRACT-threat = threat_id=(?<threat>\\d+)`,
+                explanation: "SHC Deployer pushes bundle using `splunk apply shcluster-bundle`. Search Head members merge configuration deltas directly into memory without interrupting active ad-hoc searches."
+            }
+        };
+
+        function renderBundleDiffImpact() {
+            document.getElementById('sideTitle').innerText = "Cluster Bundle Diff Impact";
+            document.getElementById('sideTag').innerText = "Restart vs Reload Predictor";
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card">
+                    <div class="card-heading">Select Staged Bundle Modification</div>
+                    <select class="sim-select" id="diffSelect" onchange="updateBundleDiff()" style="max-width:100%; margin-bottom:8px;">
+                        <option value="indexes_add">indexes.conf: Adding new index definition</option>
+                        <option value="server_auth_change">server.conf: Changing clustering pass4SymmKey</option>
+                        <option value="props_search_time">props.conf: Adding search-time field extractions</option>
+                    </select>
+                </div>
+                <div class="card" id="diffResults"></div>
+            `;
+            updateBundleDiff();
+        }
+
+        function updateBundleDiff() {
+            const val = document.getElementById('diffSelect').value;
+            const diff = bundleDiffScenarios[val];
+            document.getElementById('diffResults').innerHTML = `
+                <div class="card-heading">Impact Level: <span style="color:${diff.restartRequired ? 'var(--accent-red)' : 'var(--accent-green)'}">${diff.impact}</span></div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Target: ${diff.type}</div>
+                <div class="code-box" style="color:#93c5fd;">${diff.diff}</div>
+                <p style="font-size:0.81rem; color:#cbd5e1; line-height:1.45; margin-top:8px;">${diff.explanation}</p>
+            `;
+        }
+
+        const stanzaTemplates = {
+            "indexes_smartstore": {
+                name: "indexes.conf (SmartStore + Multi-Site Replication)",
+                file: "$SPLUNK_HOME/etc/master-apps/_cluster/indexes.conf",
+                code: `[default]
+remotePath = volume:remote_store/$_index_name
+repFactor = auto
+
+[volume:remote_store]
+storageType = remote
+path = s3://splunk-prod-cluster-bucket/storage/
+remote.s3.endpoint = https://s3.us-west-2.amazonaws.com
+remote.s3.auth_region = us-west-2
+
+[pan_traffic]
+homePath = $SPLUNK_DB/pan_traffic/db
+coldPath = $SPLUNK_DB/pan_traffic/colddb
+thawedPath = $SPLUNK_DB/pan_traffic/thaweddb
+maxDataSize = auto_high_volume
+maxGlobalDataSizeMB = 5000000
+frozenTimePeriodInSecs = 7776000`
+            },
+            "outputs_indexer_discovery": {
+                name: "outputs.conf (Indexer Discovery + AutoLB + ACK)",
+                file: "$SPLUNK_HOME/etc/apps/Splunk_TA_outputs/local/outputs.conf",
+                code: `[indexer_discovery:cm_master]
+pass4SymmKey = cluster_secret_key_123!
+master_uri = https://cm01.corp.internal:8089
+
+[tcpout:prod_cluster]
+indexerDiscovery = cm_master
+autoLBFrequency = 30
+forceTimebasedAutoLB = true
+useACK = true
+
+[tcpout]
+defaultGroup = prod_cluster`
+            },
+            "distsearch_affinity": {
+                name: "distsearch.conf (Search Affinity & Replication Blacklist)",
+                file: "$SPLUNK_HOME/etc/system/local/distsearch.conf",
+                code: `[distributedSearch]
+[replicationBlacklist]
+large_csvs = apps/*/lookups/*.csv
+sample_data = apps/*/samples/*
+
+[distributedSearch:connection]
+connectTimeout = 10
+receiveTimeout = 30`
+            },
+            "serverclass_deployer": {
+                name: "serverclass.conf (Deployment Server Forwarder Delivery)",
+                file: "$SPLUNK_HOME/etc/system/local/serverclass.conf",
+                code: `[global]
+repositoryLocation = $SPLUNK_HOME/etc/deployment-apps
+
+[serverClass:Production_Webservers]
+whitelist.0 = web-prod-*.corp.internal
+whitelist.1 = 10.10.40.*
+restartSplunkd = true
+
+[serverClass:Production_Webservers:app:Splunk_TA_apache]
+stateOnClient = enabled
+
+[serverClass:Production_Webservers:app:Splunk_TA_outputs]
+stateOnClient = enabled`
+            },
+            "props_transforms_masking": {
+                name: "props.conf & transforms.conf (Data Masking + nullQueue)",
+                file: "$SPLUNK_HOME/etc/apps/<app>/local/props.conf & transforms.conf",
+                code: `# props.conf
+[cisco:asa]
+SHOULD_LINEMERGE = false
+LINE_BREAKER = ([\\r\\n]+)
+TIME_PREFIX = ^
+TRANSFORMS-drop_teardown = filter_nullqueue
+TRANSFORMS-mask_ip = mask_sensitive_octets
+
+# transforms.conf
+[filter_nullqueue]
+REGEX = %ASA-6-302014
+DEST_KEY = queue
+FORMAT = nullQueue
+
+[mask_sensitive_octets]
+REGEX = (\\d{1,3}\\.\\d{1,3}\\.)\\d{1,3}\\.\\d{1,3}
+FORMAT = $1xxx.xxx
+DEST_KEY = _raw`
+            },
+            "server_multisite_cluster": {
+                name: "server.conf (Cluster Manager Multi-Site Definition)",
+                file: "$SPLUNK_HOME/etc/system/local/server.conf",
+                code: `[clustering]
+mode = manager
+multisite = true
+available_sites = site1,site2
+site = site1
+site_replication_factor = origin:2,total:3
+site_search_factor = origin:1,total:2
+pass4SymmKey = cluster_secret_key_123!
+cluster_label = prod_multisite_cluster`
+            }
+        };
+
+        function renderStanzaGenerator() {
+            document.getElementById('sideTitle').innerText = "Live Stanza Generator";
+            document.getElementById('sideTag').innerText = "Production Templates";
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card">
+                    <div class="card-heading">Select Stanza Blueprint</div>
+                    <select class="generator-select" id="templateSelect" onchange="updateGeneratedStanza()">
+                        <option value="indexes_smartstore">indexes.conf (SmartStore + Multi-Site)</option>
+                        <option value="outputs_indexer_discovery">outputs.conf (Indexer Discovery + AutoLB)</option>
+                        <option value="distsearch_affinity">distsearch.conf (Search Affinity & Blacklists)</option>
+                        <option value="serverclass_deployer">serverclass.conf (Deployment Server)</option>
+                        <option value="props_transforms_masking">props.conf & transforms.conf (Masking / Routing)</option>
+                        <option value="server_multisite_cluster">server.conf (Multi-Site Cluster Definition)</option>
+                    </select>
+                    <div style="font-size:0.74rem; color:var(--text-muted); margin-bottom:4px;">Target File Location:</div>
+                    <div class="code-box" id="templateLocation" style="color:var(--accent-orange); margin-bottom:8px;"></div>
+                    <div style="font-size:0.74rem; color:var(--text-muted); margin-bottom:4px;">Verified Stanza Syntax:</div>
+                    <div class="code-box" id="templateCode"></div>
+                </div>
+            `;
+            updateGeneratedStanza();
+        }
+
+        function updateGeneratedStanza() {
+            const key = document.getElementById('templateSelect').value;
+            const tpl = stanzaTemplates[key];
+            if (!tpl) return;
+            document.getElementById('templateLocation').innerText = tpl.file;
+            document.getElementById('templateCode').innerText = tpl.code;
+        }
+
+        function renderCascadeTree() {
+            document.getElementById('sideTitle').innerText = "Visual Btool Precedence Tree";
+            document.getElementById('sideTag').innerText = "Configuration Hierarchy";
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card">
+                    <div class="card-heading">Parameter Evaluation: MAX_TIMESTAMP_LOOKAHEAD</div>
+                    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:10px;">
+                        Tracking how Splunk evaluates configuration overrides from lowest priority (defaults) to highest priority (local system overrides).
+                    </p>
+
+                    <div class="cascade-step">
+                        <div class="cascade-layer">Layer 4: $SPLUNK_HOME/etc/system/default/props.conf</div>
+                        <div class="cascade-val">MAX_TIMESTAMP_LOOKAHEAD = 128</div>
+                    </div>
+
+                    <div class="cascade-step">
+                        <div class="cascade-layer">Layer 3: $SPLUNK_HOME/etc/apps/Splunk_TA_nix/default/props.conf</div>
+                        <div class="cascade-val">MAX_TIMESTAMP_LOOKAHEAD = 64</div>
+                    </div>
+
+                    <div class="cascade-step">
+                        <div class="cascade-layer">Layer 2: $SPLUNK_HOME/etc/apps/Splunk_TA_nix/local/props.conf</div>
+                        <div class="cascade-val">MAX_TIMESTAMP_LOOKAHEAD = 32</div>
+                    </div>
+
+                    <div class="cascade-step cascade-winner">
+                        <div class="cascade-layer">Layer 1: $SPLUNK_HOME/etc/system/local/props.conf (WINNER)</div>
+                        <div class="cascade-val">MAX_TIMESTAMP_LOOKAHEAD = 15</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Verification CLI Command</div>
+                    <div class="code-box">splunk cmd btool props list syslog --debug | grep -i lookahead</div>
+                </div>
+            `;
+        }
+
+        const failureScenarios = {
+            "site1_drop": {
+                title: "01. Disaster Recovery: Site 1 Peer Indexer Cluster Outage",
+                severPipes: ["pipe-uf-site1", "pipe-shc-site1", "pipe-idx-wan"],
+                alarmNodes: ["node-idx_site1"],
+                amberNodes: ["node-cm", "node-idx_site2", "node-sh_captain"],
+                symptoms: ["Cluster Manager detects loss of heartbeats from all Site 1 peers.", "Replication Factor and Search Factor targets become unmet.", "Search Heads reporting search peer timeouts."],
+                recoverySteps: [
+                    "Verify Site 1 host/network reachability over Ports 8089 and 9997.",
+                    "Check cluster condition on Cluster Manager: <code>splunk show cluster-status --verbose</code>",
+                    "If primary site is unrecoverable, execute site failover on CM: <code>splunk set cluster-condition site2_failover</code>",
+                    "CM instructs Site 2 indexers to make copies searchable and re-replicate to satisfy SF."
+                ]
+            },
+            "captain_partition": {
+                title: "02. SHC Consensus: Captain Lost / Raft Quorum Split-Brain",
+                severPipes: ["pipe-deployer-shc"],
+                alarmNodes: ["node-sh_captain"],
+                amberNodes: ["node-sh_member1", "node-sh_member2"],
+                symptoms: ["Scheduled alerts fail to trigger.", "Users receive 'No elected captain' errors when saving dashboards.", "Raft quorum (51%) lost across search head members."],
+                recoverySteps: [
+                    "Inspect cluster status: <code>splunk show shcluster-status</code>",
+                    "Verify network connectivity between members on Port 8089.",
+                    "If partitioned permanently, bootstrap a member manually: <br><code>splunk bootstrap shcluster-captain -servers_list https://sh1:8089,https://sh2:8089,https://sh3:8089</code>"
+                ]
+            },
+            "forwarder_block": {
+                title: "03. Ingestion Queue: Port 9997 Saturation / Blocked Pipe",
+                severPipes: ["pipe-uf-site1"],
+                alarmNodes: ["node-uf"],
+                amberNodes: ["node-idx_site1"],
+                symptoms: ["Universal Forwarder splunkd.log shows repeated 'Blocked' queue warnings.", "Events buffer in memory; risk of dropping data.", "Target indexers not acknowledging data blocks."],
+                recoverySteps: [
+                    "Check forwarder log: <code>grep -i 'Blocked' /opt/splunkforwarder/var/log/splunk/splunkd.log</code>",
+                    "Verify forward targets: <code>splunk list forward-server</code>",
+                    "Check indexer queues: <code>index=_internal sourcetype=splunkd group=queue</code>",
+                    "Ensure indexer storage volume hasn't breached minFreeSpace."
+                ]
+            },
+            "smartstore_thrash": {
+                title: "04. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash",
+                severPipes: ["pipe-hec-smart"],
+                alarmNodes: ["node-smartstore"],
+                amberNodes: ["node-idx_site1", "node-idx_site2"],
+                symptoms: ["Searches spanning warm data experience excessive latencies.", "Local NVMe cache constantly evicts and re-downloads warm buckets.", "S3 multi-part API calls throttling."],
+                recoverySteps: [
+                    "Monitor CacheManager eviction pressure: <br><code>index=_internal sourcetype=splunkd component=CacheManager</code>",
+                    "Increase max_cache_size in server.conf under [cachemanager].",
+                    "Evaluate hotlist metrics to ensure searches are filtering by index and timestamp."
+                ]
+            },
+            "license_violation": {
+                title: "05. License Violations: 5 Daily Pool Breaches / Search Locked",
+                severPipes: [],
+                alarmNodes: ["node-lm"],
+                amberNodes: ["node-sh_captain", "node-sh_member1", "node-sh_member2"],
+                symptoms: ["Search heads display 'License violation warning: Search disabled'.", "Scheduled reports and alerts fail to run.", "Data ingestion continues normally."],
+                recoverySteps: [
+                    "Run usage query: <code>index=_internal sourcetype=splunkd type=Usage | stats sum(b) by idx</code>",
+                    "Identify runaway inputs or debug logging sourcetypes.",
+                    "Apply a temporary reset license or increase pool capacity on the License Manager."
+                ]
+            },
+            "indexer_disk_full": {
+                title: "06. Peer Storage: minFreeSpace Breached (Ingestion Halted)",
+                severPipes: ["pipe-uf-site1", "pipe-hf-site2"],
+                alarmNodes: ["node-idx_site1"],
+                amberNodes: ["node-cm"],
+                symptoms: ["Peer indexer stops accepting connections on Port 9997.", "splunkd.log shows 'Disk full: minFreeSpace threshold reached'.", "Forwarders fail over to alternate peers."],
+                recoverySteps: [
+                    "Check disk usage: <code>df -h /opt/splunk/var/lib/splunk</code>",
+                    "Review index retention policies in <code>indexes.conf</code>.",
+                    "If SmartStore enabled, verify cache eviction is functioning."
+                ]
+            },
+            "bucket_fixup_storm": {
+                title: "07. Indexer Cluster: Flapping Peer Triggers Fixup Storm",
+                severPipes: ["pipe-cm-idx", "pipe-idx-wan"],
+                alarmNodes: ["node-cm"],
+                amberNodes: ["node-idx_site1", "node-idx_site2"],
+                symptoms: ["Cluster Manager generates thousands of fixup tasks.", "Network saturated with bucket replications across WAN Port 9887.", "Search performance degrades cluster-wide."],
+                recoverySteps: [
+                    "Inspect fixup queue: <code>splunk show cluster-status --verbose</code>",
+                    "Identify the flapping peer indexer and isolate it.",
+                    "Temporarily increase <code>restart_timeout</code> in <code>server.conf</code> on CM to prevent premature fixup scheduling."
+                ]
+            },
+            "deployer_conflict": {
+                title: "08. SHC Deployer: App Push Bundle Overwrites CSV Lookups",
+                severPipes: ["pipe-deployer-shc"],
+                alarmNodes: ["node-shc_deployer"],
+                amberNodes: ["node-sh_captain"],
+                symptoms: ["Custom lookup table changes made by users are wiped out.", "Dashboards throw 'Lookup table not found' or stale data errors."],
+                recoverySteps: [
+                    "Always apply bundles with the preserve lookups flag: <br><code>splunk apply shcluster-bundle -target https://<sh>:8089 -preserve-lookups true</code>",
+                    "Restore lookup CSVs from backup or check the lookup history in KV Store."
+                ]
+            },
+            "shc_out_of_sync": {
+                title: "09. Search Head Desync: Member Falls Out of Raft Replication",
+                severPipes: [],
+                alarmNodes: ["node-sh_member2"],
+                amberNodes: ["node-sh_captain"],
+                symptoms: ["Dashboards updated on one search head do not show updates on member 2.", "splunkd.log throws <code>ConfReplication - commit failed</code>."],
+                recoverySteps: [
+                    "On the desynced member, run: <code>splunk resync shcluster-member</code>",
+                    "If resync fails, stop Splunk, purge runtime replicate cache, and restart to force a snapshot pull from the Captain."
+                ]
+            },
+            "port_drop_9997": {
+                title: "10. Firewall Drop: Port 9997 Drops Ingestion Traffic",
+                severPipes: ["pipe-uf-site1", "pipe-hf-site2"],
+                alarmNodes: ["node-uf", "node-hf"],
+                amberNodes: ["node-idx_site1"],
+                symptoms: ["No data reaching indexers.", "Forwarder logs show <code>TcpOutputProc - Connection refused on 9997</code>."],
+                recoverySteps: [
+                    "Test socket connection from forwarder: <code>nc -zv <indexer_ip> 9997</code>",
+                    "Verify input is enabled on indexers: <code>splunk cmd btool inputs list splunktcp --debug</code>",
+                    "Check local firewall (iptables/firewalld) and cloud security groups."
+                ]
+            },
+            "wan_latency_spike": {
+                title: "11. Inter-Site WAN Latency: Bucket Replication Times Out (9887)",
+                severPipes: ["pipe-idx-wan"],
+                alarmNodes: ["node-idx_site1", "node-idx_site2"],
+                amberNodes: ["node-cm"],
+                symptoms: ["Inter-site replication queue backs up.", "Cluster Manager flags replication factor as unmet across sites."],
+                recoverySteps: [
+                    "Check network latency between sites on Port 9887.",
+                    "In <code>server.conf</code> under <code>[clustering]</code>, tune <code>max_replication_threads</code> and socket timeouts.",
+                    "Enable replication compression: <code>compress_inter_site_replication = true</code> in <code>server.conf</code>."
+                ]
+            },
+            "fishbucket_corrupt": {
+                title: "12. Forwarder Loop: Fishbucket Corruption Causes Re-indexing",
+                severPipes: [],
+                alarmNodes: ["node-uf"],
+                amberNodes: ["node-lm"],
+                symptoms: ["License usage spikes dramatically.", "Duplicate logs indexed across all dashboards."],
+                recoverySteps: [
+                    "Inspect fishbucket pointer: <code>splunk cmd btprobe -d $SPLUNK_HOME/var/lib/splunk/fishbucket/splunk_dirsize.db -k <file></code>",
+                    "To reset fishbucket without full data wipe, run: <code>splunk clean eventdata -index _fishbucket</code>",
+                    "Ensure monitored files are not being touched with new timestamps without new content."
+                ]
+            },
+            "search_bundle_exhaust": {
+                title: "13. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space",
+                severPipes: ["pipe-shc-site1", "pipe-shc-site2"],
+                alarmNodes: ["node-sh_captain"],
+                amberNodes: ["node-idx_site1", "node-idx_site2"],
+                symptoms: ["Search heads take minutes to dispatch simple queries.", "Peer indexers throw 'Bundle unpack failed: No space left on device'."],
+                recoverySteps: [
+                    "Check bundle size in <code>$SPLUNK_HOME/var/run/splunk/dispatch</code>.",
+                    "In <code>distsearch.conf</code>, add large lookups to <code>[replicationBlacklist]</code>.",
+                    "Migrate large CSV lookup tables to KV Store."
+                ]
+            },
+            "cm_split_brain": {
+                title: "14. Management Partition: Cluster Manager Unreachable by SHC",
+                severPipes: ["pipe-cm-idx"],
+                alarmNodes: ["node-cm"],
+                amberNodes: ["node-sh_captain", "node-idx_site1"],
+                symptoms: ["Search Heads cannot discover new indexer peers.", "Indexer peers operate in standby mode; searches continue on last known peer map."],
+                recoverySteps: [
+                    "Restore network route to CM over Port 8089.",
+                    "Verify CM process: <code>splunk status</code>",
+                    "Search heads retain cached peer lists, preventing immediate search outages."
+                ]
+            },
+            "hec_queue_overflow": {
+                title: "15. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow",
+                severPipes: ["pipe-hec-smart"],
+                alarmNodes: ["node-hec"],
+                amberNodes: ["node-idx_site1"],
+                symptoms: ["CloudWatch/Kubernetes log forwarders receive HTTP 503 Server Busy.", "Ingested events dropped at client API boundaries."],
+                recoverySteps: [
+                    "In <code>inputs.conf</code> under <code>[http]</code>, increase <code>max_content_length</code> and queue limits.",
+                    "Enable load balancing across multiple HEC tokens or scale out indexer HEC endpoints.",
+                    "Enable channel-based indexer acknowledgment: <code>useACK = true</code>."
+                ]
+            }
+        };
+
+        function resetSimulation() {
+            document.querySelectorAll('.node').forEach(n => {
+                n.classList.remove('alarm-red', 'alarm-amber');
+            });
+            document.querySelectorAll('path').forEach(p => {
+                p.classList.remove('pipe-severed');
+            });
+            renderSimulatorRunbook();
+        }
+
+        function runSimulation() {
+            resetSimulation();
+            const scenarioKey = document.getElementById('simScenarioSelect').value;
+            const sc = failureScenarios[scenarioKey];
+            if (!sc) return;
+
+            sc.severPipes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('pipe-severed');
+            });
+
+            sc.alarmNodes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('alarm-red');
+            });
+
+            sc.amberNodes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('alarm-amber');
+            });
+
+            renderSimulatorRunbook(sc);
+        }
+
+        function renderSimulatorRunbook(scenario = null) {
+            document.getElementById('sideTitle').innerText = "Failure Simulator Console";
+            document.getElementById('sideTag').innerText = "15 Enterprise Scenarios";
+
+            if (!scenario) {
+                document.getElementById('sideContent').innerHTML = `
+                    <div class="card">
+                        <div class="card-heading">15 Enterprise Outage Scenarios</div>
+                        <p style="font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
+                            Use the top toolbar to inject simulated failures into the cluster. The canvas will animate severed network pipes, trigger alarms, and render diagnostic procedures.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card alarm-card">
+                    <div class="card-heading" style="color:var(--accent-red)">Outage Triggered: ${scenario.title}</div>
+                    <ul class="bullet-list" style="margin-top:6px;">
+                        ${scenario.symptoms.map(s => `<li style="color:#fca5a5;">${s}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Remediation & Incident Runbook</div>
+                    <ul class="bullet-list">
+                        ${scenario.recoverySteps.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        const dropdown = document.getElementById('dropdownPanel');
+
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase().trim();
+            if (!val) { dropdown.style.display = 'none'; return; }
+
+            const results = Object.keys(splunkComponents).filter(k => 
+                splunkComponents[k].name.toLowerCase().includes(val) ||
+                splunkComponents[k].configs.some(c => c.toLowerCase().includes(val)) ||
+                (splunkComponents[k].affinityDetails && splunkComponents[k].affinityDetails.toLowerCase().includes(val)) ||
+                (splunkComponents[k].kvstoreDetails && splunkComponents[k].kvstoreDetails.toLowerCase().includes(val))
+            );
+
+            if (results.length > 0) {
+                dropdown.innerHTML = results.map(k => `
+                    <div class="dropdown-item" onclick="selectComponent('${k}')">
+                        <div class="dropdown-q">${splunkComponents[k].name}</div>
+                        <div class="dropdown-desc">${splunkComponents[k].tier}</div>
+                    </div>
+                `).join('');
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) dropdown.style.display = 'none';
+        });
+
+        selectComponent('sh_captain');
+    </script>
+</body>
+</html>
