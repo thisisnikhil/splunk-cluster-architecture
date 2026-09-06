@@ -265,7 +265,7 @@
         @keyframes flowAnim { to { stroke-dashoffset: -100; } }
 
         .sidebar {
-            width: 580px;
+            width: 600px;
             background: var(--bg-secondary);
             border-left: 2px solid var(--border);
             display: flex;
@@ -336,23 +336,6 @@
         .cascade-winner { border-left-color: var(--accent-green); }
         .cascade-winner .cascade-layer { color: var(--accent-green); }
 
-        .packet-stage-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 5px 8px;
-            border-radius: 4px;
-            font-size: 0.74rem;
-            cursor: pointer;
-            margin-right: 4px;
-            margin-bottom: 4px;
-        }
-        .packet-stage-btn.active {
-            background: var(--accent-blue);
-            color: var(--bg-base);
-            font-weight: 700;
-        }
-
         .generator-select {
             width: 100%;
             background: var(--bg-input);
@@ -363,6 +346,22 @@
             font-size: 0.8rem;
             outline: none;
             margin-bottom: 8px;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.76rem;
+            margin-top: 6px;
+        }
+        .matrix-table th, .matrix-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: left;
+        }
+        .matrix-table th {
+            background-color: var(--bg-card);
+            color: var(--accent-blue);
         }
     </style>
 </head>
@@ -380,13 +379,14 @@
             <button class="mode-btn" onclick="switchToolView('mapreduce')">MapReduce</button>
             <button class="mode-btn" onclick="switchToolView('bundlediff')">Bundle Diff</button>
             <button class="mode-btn" onclick="switchToolView('generator')">Stanza Gen</button>
+            <button class="mode-btn" onclick="switchToolView('matrix')">KV/TLS Matrix</button>
             <button class="mode-btn" onclick="switchToolView('cascade')">Btool Tree</button>
             <button class="mode-btn" onclick="switchToolView('simulator')">Failure Sim (15)</button>
         </div>
 
         <div class="search-container">
             <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <input type="text" id="searchInput" class="search-input" placeholder="Search architecture, search affinity, btool, KV store...">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search architecture, WLM, mTLS, KV store...">
             <div id="dropdownPanel" class="dropdown"></div>
         </div>
     </header>
@@ -403,16 +403,16 @@
                     <option value="captain_partition">02. SHC Consensus: Captain Lost / Raft Quorum Split-Brain</option>
                     <option value="forwarder_block">03. Ingestion Queue: Port 9997 Saturation / Blocked Pipe</option>
                     <option value="smartstore_thrash">04. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash</option>
-                    <option value="license_violation">05. License Violations: 5 Daily Pool Breaches / Search Locked</option>
-                    <option value="indexer_disk_full">06. Peer Storage: minFreeSpace Breached (Ingestion Halted)</option>
-                    <option value="bucket_fixup_storm">07. Indexer Cluster: Flapping Peer Triggers Fixup Storm</option>
-                    <option value="deployer_conflict">08. SHC Deployer: App Push Bundle Overwrites CSV Lookups</option>
-                    <option value="shc_out_of_sync">09. Search Head Desync: Member Falls Out of Raft Replication</option>
-                    <option value="port_drop_9997">10. Firewall Drop: Port 9997 Drops Ingestion Traffic</option>
-                    <option value="wan_latency_spike">11. Inter-Site WAN Latency: Bucket Replication Times Out (9887)</option>
-                    <option value="fishbucket_corrupt">12. Forwarder Loop: Fishbucket Corruption Causes Re-indexing</option>
-                    <option value="search_bundle_exhaust">13. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space</option>
-                    <option value="cm_split_brain">14. Management Partition: Cluster Manager Unreachable by SHC</option>
+                    <option value="kvstore_sync_fail">05. KV Store Engine: Port 8191 SSL Handshake Replica Timeout</option>
+                    <option value="license_violation">06. License Violations: 5 Daily Pool Breaches / Search Locked</option>
+                    <option value="indexer_disk_full">07. Peer Storage: minFreeSpace Breached (Ingestion Halted)</option>
+                    <option value="bucket_fixup_storm">08. Indexer Cluster: Flapping Peer Triggers Fixup Storm</option>
+                    <option value="deployer_conflict">09. SHC Deployer: App Push Bundle Overwrites CSV Lookups</option>
+                    <option value="search_bundle_exhaust">10. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space</option>
+                    <option value="shc_out_of_sync">11. Search Head Desync: Member Falls Out of Raft Replication</option>
+                    <option value="port_drop_9997">12. Firewall Drop: Port 9997 Drops Ingestion Traffic</option>
+                    <option value="wan_latency_spike">13. Inter-Site WAN Latency: Bucket Replication Times Out (9887)</option>
+                    <option value="fishbucket_corrupt">14. Forwarder Loop: Fishbucket Corruption Causes Re-indexing</option>
                     <option value="hec_queue_overflow">15. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow</option>
                 </select>
                 <button class="sim-btn-trigger" onclick="runSimulation()">Inject Outage</button>
@@ -481,14 +481,14 @@
                     <text x="728" y="637" font-size="9" fill="#f97316">phoneHome</text>
 
                     <rect x="20" y="20" width="680" height="200" class="tier-bg"/>
-                    <text x="35" y="44" class="tier-title">Tier 3: Search Head Cluster (SHC) - Search Affinity & KV Store</text>
+                    <text x="35" y="44" class="tier-title">Tier 3: Search Head Cluster (SHC) - WLM, Search Affinity & KV Store</text>
 
                     <g class="node" id="node-sh_captain" onclick="selectComponent('sh_captain')">
                         <rect x="35" y="65" width="205" height="135" stroke="#38bdf8"/>
                         <polygon points="46,84 48,76 52,80 56,76 58,84" fill="none" stroke="#38bdf8" stroke-width="1.2"/>
                         <text x="64" y="83" class="title">SHC Captain (Site 1)</text>
                         <text x="45" y="106" class="desc">Scheduler & KV Store Primary</text>
-                        <text x="45" y="126" class="desc">Raft Engine (Port 8089)</text>
+                        <text x="45" y="126" class="desc">Workload Mgmt (cgroups v2)</text>
                         <text x="45" y="148" class="desc" fill="#38bdf8">Search Affinity: Site 1 Target</text>
                         <text x="45" y="168" class="desc" fill="#94a3b8">users/ & apps/local/</text>
                         <text x="45" y="186" class="desc" fill="#10b981">Local TSIDX Read (No WAN)</text>
@@ -702,6 +702,8 @@
                 renderBundleDiffImpact();
             } else if (viewMode === 'generator') {
                 renderStanzaGenerator();
+            } else if (viewMode === 'matrix') {
+                renderTroubleshootingMatrix();
             } else if (viewMode === 'cascade') {
                 renderCascadeTree();
             } else if (viewMode === 'simulator') {
@@ -714,16 +716,18 @@
                 name: "SHC Captain (Elected) & Search Affinity",
                 tier: "Tier 3: Search Head Cluster Tier",
                 configs: ["$SPLUNK_HOME/etc/system/local/server.conf ([shclustering])", "$SPLUNK_HOME/etc/system/local/distsearch.conf", "$SPLUNK_HOME/etc/users/", "$SPLUNK_HOME/etc/apps/<app>/local/"],
+                wlmDetails: "Workload Management (WLM) leverages Linux kernel cgroups (v1/v2) to prevent ad-hoc user searches from starving enterprise scheduled alerts or indexing queues. Configured via `workload_pools.conf` and `workload_rules.conf`. Search processes (`splunk-search`) are automatically allocated into CPU/Memory slices (e.g., `ad_hoc: 30% CPU, 4GB RAM`, `scheduled: 50% CPU, 12GB RAM`, `ingest: 20% CPU`).",
                 affinityDetails: "Search Affinity enables a Search Head assigned to `site1` to query only `site1` peer indexers for searches, eliminating high-cost inter-site WAN bandwidth. This is made possible because `site_search_factor` ensures at least one complete searchable copy (TSIDX) resides locally on `site1`. If a local site1 indexer crashes, the search head automatically fails over across the WAN to `site2` indexers.",
                 distsearchDetails: "The Search Head compiles queries into a MapReduce bundle, checks index availability, and dispatches sub-searches over Port 8089 to local indexer peers. Peers return transformed results (summarized chunks) rather than raw logs, drastically reducing network transmission.",
                 koDetails: "Runtime Knowledge Objects (Dashboards, Saved Searches, Lookups) are written to $SPLUNK_HOME/etc/users/<user>/ or $SPLUNK_HOME/etc/apps/<app>/local/ and replicated dynamically across members via Raft consensus on Port 8089.",
                 kvstoreDetails: "KV Store operates as an independent MongoDB Replica Set listening on Port 8191. Captaincy in Raft does not strictly dictate the MongoDB primary. Triage status using `splunk show kvstore-status`.",
-                triage: ["splunk show shcluster-status", "splunk show kvstore-status", "splunk transfer shcluster-captain -mgr-uri https://<target>:8089"]
+                triage: ["splunk show shcluster-status", "splunk show kvstore-status", "splunk check-wlm-config", "splunk transfer shcluster-captain -mgr-uri https://<target>:8089"]
             },
             "sh_member": {
                 name: "SHC Member Node",
                 tier: "Tier 3: Search Head Cluster Tier",
                 configs: ["$SPLUNK_HOME/etc/system/local/distsearch.conf", "$SPLUNK_HOME/etc/system/local/server.conf"],
+                wlmDetails: "Applies local cgroup limits to user ad-hoc searches matching user role (e.g., admin vs power vs user) or search type.",
                 affinityDetails: "Search affinity is enabled by setting `site = site1` (or `site2`) in `server.conf` under `[general]` on the search head. To disable search affinity and force global load balancing, set `site = site0`.",
                 distsearchDetails: "Search heads distribute bundles via `distsearch.conf`. Large lookups can saturate dispatch replication; use `replicationBlacklist` in `distsearch.conf` to block large non-indexed CSV tables.",
                 koDetails: "Replicates all runtime knowledge objects in real-time from the Captain over Port 8089.",
@@ -734,6 +738,7 @@
                 name: "Site 1 Peer Indexers (Ingestion & Storage)",
                 tier: "Tier 2: Multi-Site Indexing Tier",
                 configs: ["$SPLUNK_HOME/etc/slave-apps/ (deployed by CM)", "$SPLUNK_HOME/etc/system/local/indexes.conf", "$SPLUNK_HOME/etc/system/local/server.conf ([clustering] site=site1)"],
+                wlmDetails: "On indexers, WLM guarantees that the Ingestion pipeline (`pipeline: ingestion`) receives dedicated CPU core slices, preventing heavy sub-searches from causing backpressure and blocked forwarder queues.",
                 forwarderInteraction: "Forwarders connect via Port 9997 using TCP cooked pipelines. When `useACK=true`, the forwarder holds events in memory until the peer indexer flushes the raw slice to disk journal.",
                 replicationDetails: "Once data enters a hot bucket, the indexer streams raw data copies across local peers (`site1:2`) and across the WAN pipe over Port 9887 to Site 2 peers (`site2:2`). Searchable indexers build local `.tsidx` inverted files to satisfy the `site_search_factor`.",
                 newIndexersAdded: "When a new indexer joins: 1) Configure `server.conf` with `mode=peer`, `master_uri`, `pass4SymmKey`, and `site=site1`. 2) Restart Splunk. 3) CM detects peer, registers heartbeats, triggers cluster bundle download from `master-apps`, and begins streaming bucket fixup tasks without restarting the existing cluster.",
@@ -849,6 +854,16 @@
                 `;
             }
 
+            let wlmSection = "";
+            if (data.wlmDetails) {
+                wlmSection = `
+                    <div class="card">
+                        <div class="card-heading">Workload Management (WLM) & cgroups Engine</div>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;">${data.wlmDetails}</p>
+                    </div>
+                `;
+            }
+
             let affinitySection = "";
             if (data.affinityDetails) {
                 affinitySection = `
@@ -910,6 +925,7 @@
                     ${data.configs.map(cfg => `<div class="code-box">${cfg}</div>`).join('')}
                 </div>
 
+                ${wlmSection}
                 ${affinitySection}
                 ${kvstoreSection}
                 ${forwarderSection}
@@ -1103,7 +1119,113 @@
             `;
         }
 
+        function renderTroubleshootingMatrix() {
+            document.getElementById('sideTitle').innerText = "KV Store & mTLS Matrix";
+            document.getElementById('sideTag').innerText = "Certificates & Mongo Recovery";
+
+            document.getElementById('sideContent').innerHTML = `
+                <div class="card">
+                    <div class="card-heading">KV Store Replica Set Recovery Matrix (Port 8191)</div>
+                    <table class="matrix-table">
+                        <tr>
+                            <th>Symptom / Error</th>
+                            <th>Root Cause</th>
+                            <th>Remediation CLI Command</th>
+                        </tr>
+                        <tr>
+                            <td><code>KV Store status: failed</code></td>
+                            <td>Corrupted mongod.lock file after abrupt host reboot.</td>
+                            <td><code>rm $SPLUNK_HOME/var/lib/splunk/kvstore/mongo/mongod.lock<br>splunk restart</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>SSL handshake failed on 8191</code></td>
+                            <td>Certificate expired or CA mismatch in server.conf.</td>
+                            <td>Verify <code>sslRootCAPath</code> & <code>serverCert</code> in <code>server.conf [kvstore]</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>Replica set member stuck in RECOVERING</code></td>
+                            <td>Oplog gap too large to sync from current primary.</td>
+                            <td><code>splunk clean kvstore --cluster</code> (Forces fresh initial resync from primary).</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Splunk Mutual TLS (mTLS) Architecture Matrix</div>
+                    <table class="matrix-table">
+                        <tr>
+                            <th>Encryption Layer</th>
+                            <th>Target Configuration</th>
+                            <th>Required Stanzas & Keys</th>
+                        </tr>
+                        <tr>
+                            <td><b>Forwarder Ingest (9997)</b></td>
+                            <td><code>inputs.conf</code> & <code>outputs.conf</code></td>
+                            <td><code>[splunktcp-ssl:9997]<br>sslVerifyServerCert = true<br>sslCommonNameToCheck = indexer.corp</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Management REST (8089)</b></td>
+                            <td><code>server.conf</code></td>
+                            <td><code>[sslConfig]<br>enableSplunkdSSL = true<br>sslRootCAPath = /opt/splunk/etc/auth/myCA.pem</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Web UI HTTPS (8000)</b></td>
+                            <td><code>web.conf</code></td>
+                            <td><code>[settings]<br>enableSplunkWebSSL = true<br>privKeyPath = etc/auth/splunkweb/priv.key</code></td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+        }
+
         const stanzaTemplates = {
+            "wlm_pools_rules": {
+                name: "Workload Management (workload_pools & workload_rules)",
+                file: "$SPLUNK_HOME/etc/system/local/workload_pools.conf & workload_rules.conf",
+                code: `# workload_pools.conf
+[workload_pool:ingestion_pool]
+cpu_weight = 30
+mem_weight = 30
+
+[workload_pool:scheduled_search_pool]
+cpu_weight = 40
+mem_weight = 40
+
+[workload_pool:adhoc_search_pool]
+cpu_weight = 30
+mem_weight = 30
+
+# workload_rules.conf
+[workload_rule:route_enterprise_alerts]
+predicate = role=admin AND search_type=scheduled
+workload_pool = scheduled_search_pool
+
+[workload_rule:route_ad_hoc_users]
+predicate = search_type=adhoc
+workload_pool = adhoc_search_pool`
+            },
+            "mtls_inputs_outputs": {
+                name: "mTLS Cooked Pipeline (inputs.conf & outputs.conf)",
+                file: "$SPLUNK_HOME/etc/system/local/inputs.conf & outputs.conf",
+                code: `# Indexer Peer inputs.conf
+[splunktcp-ssl:9997]
+connection_host = ip
+
+[SSL]
+serverCert = /opt/splunk/etc/auth/certs/indexer_server.pem
+sslPassword = cert_password_123!
+sslRootCAPath = /opt/splunk/etc/auth/certs/corp_ca.pem
+requireClientCert = true
+
+# Universal Forwarder outputs.conf
+[tcpout:prod_cluster]
+server = 10.10.1.20:9997, 10.10.1.21:9997
+clientCert = /opt/splunkforwarder/etc/auth/certs/forwarder.pem
+sslPassword = cert_password_123!
+sslRootCAPath = /opt/splunkforwarder/etc/auth/certs/corp_ca.pem
+sslVerifyServerCert = true
+sslCommonNameToCheck = indexer*.corp.internal`
+            },
             "indexes_smartstore": {
                 name: "indexes.conf (SmartStore + Multi-Site Replication)",
                 file: "$SPLUNK_HOME/etc/master-apps/_cluster/indexes.conf",
@@ -1215,6 +1337,8 @@ cluster_label = prod_multisite_cluster`
                 <div class="card">
                     <div class="card-heading">Select Stanza Blueprint</div>
                     <select class="generator-select" id="templateSelect" onchange="updateGeneratedStanza()">
+                        <option value="wlm_pools_rules">workload_pools & workload_rules.conf (WLM)</option>
+                        <option value="mtls_inputs_outputs">mTLS Pipeline (inputs.conf & outputs.conf)</option>
                         <option value="indexes_smartstore">indexes.conf (SmartStore + Multi-Site)</option>
                         <option value="outputs_indexer_discovery">outputs.conf (Indexer Discovery + AutoLB)</option>
                         <option value="distsearch_affinity">distsearch.conf (Search Affinity & Blacklists)</option>
@@ -1329,8 +1453,20 @@ cluster_label = prod_multisite_cluster`
                     "Evaluate hotlist metrics to ensure searches are filtering by index and timestamp."
                 ]
             },
+            "kvstore_sync_fail": {
+                title: "05. KV Store Engine: Port 8191 SSL Handshake Replica Timeout",
+                severPipes: [],
+                alarmNodes: ["node-sh_captain", "node-sh_member1"],
+                amberNodes: ["node-sh_member2"],
+                symptoms: ["Users cannot load stateful dashboards relying on KV lookups.", "mongod.log outputs SSL handshake validation errors on Port 8191.", "KV Store replication status reports 'failed'."],
+                recoverySteps: [
+                    "Check KV Store health: <code>splunk show kvstore-status</code>",
+                    "Verify certificates in <code>$SPLUNK_HOME/etc/auth/</code>.",
+                    "Restart KV Store engine: <code>splunk clean kvstore --cluster</code> (use caution: backup collections first)."
+                ]
+            },
             "license_violation": {
-                title: "05. License Violations: 5 Daily Pool Breaches / Search Locked",
+                title: "06. License Violations: 5 Daily Pool Breaches / Search Locked",
                 severPipes: [],
                 alarmNodes: ["node-lm"],
                 amberNodes: ["node-sh_captain", "node-sh_member1", "node-sh_member2"],
@@ -1342,7 +1478,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "indexer_disk_full": {
-                title: "06. Peer Storage: minFreeSpace Breached (Ingestion Halted)",
+                title: "07. Peer Storage: minFreeSpace Breached (Ingestion Halted)",
                 severPipes: ["pipe-uf-site1", "pipe-hf-site2"],
                 alarmNodes: ["node-idx_site1"],
                 amberNodes: ["node-cm"],
@@ -1354,7 +1490,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "bucket_fixup_storm": {
-                title: "07. Indexer Cluster: Flapping Peer Triggers Fixup Storm",
+                title: "08. Indexer Cluster: Flapping Peer Triggers Fixup Storm",
                 severPipes: ["pipe-cm-idx", "pipe-idx-wan"],
                 alarmNodes: ["node-cm"],
                 amberNodes: ["node-idx_site1", "node-idx_site2"],
@@ -1366,7 +1502,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "deployer_conflict": {
-                title: "08. SHC Deployer: App Push Bundle Overwrites CSV Lookups",
+                title: "09. SHC Deployer: App Push Bundle Overwrites CSV Lookups",
                 severPipes: ["pipe-deployer-shc"],
                 alarmNodes: ["node-shc_deployer"],
                 amberNodes: ["node-sh_captain"],
@@ -1376,8 +1512,20 @@ cluster_label = prod_multisite_cluster`
                     "Restore lookup CSVs from backup or check the lookup history in KV Store."
                 ]
             },
+            "search_bundle_exhaust": {
+                title: "10. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space",
+                severPipes: ["pipe-shc-site1", "pipe-shc-site2"],
+                alarmNodes: ["node-sh_captain"],
+                amberNodes: ["node-idx_site1", "node-idx_site2"],
+                symptoms: ["Search heads take minutes to dispatch simple queries.", "Peer indexers throw 'Bundle unpack failed: No space left on device'."],
+                recoverySteps: [
+                    "Check bundle size in <code>$SPLUNK_HOME/var/run/splunk/dispatch</code>.",
+                    "In <code>distsearch.conf</code>, add large lookups to <code>[replicationBlacklist]</code>.",
+                    "Migrate large CSV lookup tables to KV Store."
+                ]
+            },
             "shc_out_of_sync": {
-                title: "09. Search Head Desync: Member Falls Out of Raft Replication",
+                title: "11. Search Head Desync: Member Falls Out of Raft Replication",
                 severPipes: [],
                 alarmNodes: ["node-sh_member2"],
                 amberNodes: ["node-sh_captain"],
@@ -1388,7 +1536,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "port_drop_9997": {
-                title: "10. Firewall Drop: Port 9997 Drops Ingestion Traffic",
+                title: "12. Firewall Drop: Port 9997 Drops Ingestion Traffic",
                 severPipes: ["pipe-uf-site1", "pipe-hf-site2"],
                 alarmNodes: ["node-uf", "node-hf"],
                 amberNodes: ["node-idx_site1"],
@@ -1400,7 +1548,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "wan_latency_spike": {
-                title: "11. Inter-Site WAN Latency: Bucket Replication Times Out (9887)",
+                title: "13. Inter-Site WAN Latency: Bucket Replication Times Out (9887)",
                 severPipes: ["pipe-idx-wan"],
                 alarmNodes: ["node-idx_site1", "node-idx_site2"],
                 amberNodes: ["node-cm"],
@@ -1412,7 +1560,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "fishbucket_corrupt": {
-                title: "12. Forwarder Loop: Fishbucket Corruption Causes Re-indexing",
+                title: "14. Forwarder Loop: Fishbucket Corruption Causes Re-indexing",
                 severPipes: [],
                 alarmNodes: ["node-uf"],
                 amberNodes: ["node-lm"],
@@ -1421,30 +1569,6 @@ cluster_label = prod_multisite_cluster`
                     "Inspect fishbucket pointer: <code>splunk cmd btprobe -d $SPLUNK_HOME/var/lib/splunk/fishbucket/splunk_dirsize.db -k <file></code>",
                     "To reset fishbucket without full data wipe, run: <code>splunk clean eventdata -index _fishbucket</code>",
                     "Ensure monitored files are not being touched with new timestamps without new content."
-                ]
-            },
-            "search_bundle_exhaust": {
-                title: "13. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space",
-                severPipes: ["pipe-shc-site1", "pipe-shc-site2"],
-                alarmNodes: ["node-sh_captain"],
-                amberNodes: ["node-idx_site1", "node-idx_site2"],
-                symptoms: ["Search heads take minutes to dispatch simple queries.", "Peer indexers throw 'Bundle unpack failed: No space left on device'."],
-                recoverySteps: [
-                    "Check bundle size in <code>$SPLUNK_HOME/var/run/splunk/dispatch</code>.",
-                    "In <code>distsearch.conf</code>, add large lookups to <code>[replicationBlacklist]</code>.",
-                    "Migrate large CSV lookup tables to KV Store."
-                ]
-            },
-            "cm_split_brain": {
-                title: "14. Management Partition: Cluster Manager Unreachable by SHC",
-                severPipes: ["pipe-cm-idx"],
-                alarmNodes: ["node-cm"],
-                amberNodes: ["node-sh_captain", "node-idx_site1"],
-                symptoms: ["Search Heads cannot discover new indexer peers.", "Indexer peers operate in standby mode; searches continue on last known peer map."],
-                recoverySteps: [
-                    "Restore network route to CM over Port 8089.",
-                    "Verify CM process: <code>splunk status</code>",
-                    "Search heads retain cached peer lists, preventing immediate search outages."
                 ]
             },
             "hec_queue_overflow": {
@@ -1539,6 +1663,7 @@ cluster_label = prod_multisite_cluster`
                 splunkComponents[k].name.toLowerCase().includes(val) ||
                 splunkComponents[k].configs.some(c => c.toLowerCase().includes(val)) ||
                 (splunkComponents[k].affinityDetails && splunkComponents[k].affinityDetails.toLowerCase().includes(val)) ||
+                (splunkComponents[k].wlmDetails && splunkComponents[k].wlmDetails.toLowerCase().includes(val)) ||
                 (splunkComponents[k].kvstoreDetails && splunkComponents[k].kvstoreDetails.toLowerCase().includes(val))
             );
 
