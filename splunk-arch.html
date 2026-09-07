@@ -88,7 +88,7 @@
 
         .search-container {
             flex: 1;
-            max-width: 320px;
+            max-width: 300px;
             position: relative;
         }
 
@@ -212,7 +212,7 @@
             font-size: 0.76rem;
             outline: none;
             flex: 1;
-            max-width: 520px;
+            max-width: 540px;
         }
 
         .sim-btn-trigger {
@@ -363,6 +363,23 @@
             background-color: var(--bg-card);
             color: var(--accent-blue);
         }
+
+        .packet-stage-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            cursor: pointer;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+        .packet-stage-btn.active {
+            background: var(--accent-blue);
+            color: var(--bg-base);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -381,12 +398,12 @@
             <button class="mode-btn" onclick="switchToolView('generator')">Stanza Gen</button>
             <button class="mode-btn" onclick="switchToolView('matrix')">KV/TLS Matrix</button>
             <button class="mode-btn" onclick="switchToolView('cascade')">Btool Tree</button>
-            <button class="mode-btn" onclick="switchToolView('simulator')">Failure Sim (15)</button>
+            <button class="mode-btn" onclick="switchToolView('simulator')">Failure Sim (18)</button>
         </div>
 
         <div class="search-container">
             <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <input type="text" id="searchInput" class="search-input" placeholder="Search architecture, WLM, mTLS, KV store...">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search architecture, VAST, CIM, scanCount...">
             <div id="dropdownPanel" class="dropdown"></div>
         </div>
     </header>
@@ -399,21 +416,24 @@
             <div class="sim-bar" id="simFloatingBar" style="display: none;">
                 <span class="sim-label">Failure Injection:</span>
                 <select class="sim-select" id="simScenarioSelect">
-                    <option value="site1_drop">01. Disaster Recovery: Site 1 Peer Indexer Cluster Outage</option>
-                    <option value="captain_partition">02. SHC Consensus: Captain Lost / Raft Quorum Split-Brain</option>
-                    <option value="forwarder_block">03. Ingestion Queue: Port 9997 Saturation / Blocked Pipe</option>
-                    <option value="smartstore_thrash">04. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash</option>
-                    <option value="kvstore_sync_fail">05. KV Store Engine: Port 8191 SSL Handshake Replica Timeout</option>
-                    <option value="license_violation">06. License Violations: 5 Daily Pool Breaches / Search Locked</option>
-                    <option value="indexer_disk_full">07. Peer Storage: minFreeSpace Breached (Ingestion Halted)</option>
-                    <option value="bucket_fixup_storm">08. Indexer Cluster: Flapping Peer Triggers Fixup Storm</option>
-                    <option value="deployer_conflict">09. SHC Deployer: App Push Bundle Overwrites CSV Lookups</option>
-                    <option value="search_bundle_exhaust">10. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space</option>
-                    <option value="shc_out_of_sync">11. Search Head Desync: Member Falls Out of Raft Replication</option>
-                    <option value="port_drop_9997">12. Firewall Drop: Port 9997 Drops Ingestion Traffic</option>
-                    <option value="wan_latency_spike">13. Inter-Site WAN Latency: Bucket Replication Times Out (9887)</option>
-                    <option value="fishbucket_corrupt">14. Forwarder Loop: Fishbucket Corruption Causes Re-indexing</option>
-                    <option value="hec_queue_overflow">15. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow</option>
+                    <option value="indexer_flapping">01. Indexer Flapping: Network Latency / Re-replication Storm (Maintenance Mode)</option>
+                    <option value="ingest_flatline">02. Ingestion Gap: Log Rotation / Permissions Lockout (metrics.log Triage)</option>
+                    <option value="incomplete_search">03. Incomplete Search Results: Job Inspector Search Peer Timeouts</option>
+                    <option value="deployer_leak">04. Deployment Server Misconfiguration: Parsing Configs Leaking to SHC</option>
+                    <option value="site1_drop">05. Disaster Recovery: Site 1 Peer Indexer Cluster Outage</option>
+                    <option value="captain_partition">06. SHC Consensus: Captain Lost / Raft Quorum Split-Brain</option>
+                    <option value="forwarder_block">07. Ingestion Queue: Port 9997 Saturation / Blocked Pipe</option>
+                    <option value="smartstore_thrash">08. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash</option>
+                    <option value="kvstore_sync_fail">09. KV Store Engine: Port 8191 SSL Handshake Replica Timeout</option>
+                    <option value="license_violation">10. License Violations: 5 Daily Pool Breaches / Search Locked</option>
+                    <option value="indexer_disk_full">11. Peer Storage: minFreeSpace Breached (Ingestion Halted)</option>
+                    <option value="bucket_fixup_storm">12. Indexer Cluster: Flapping Peer Triggers Fixup Storm</option>
+                    <option value="deployer_conflict">13. SHC Deployer: App Push Bundle Overwrites CSV Lookups</option>
+                    <option value="search_bundle_exhaust">14. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space</option>
+                    <option value="shc_out_of_sync">15. Search Head Desync: Member Falls Out of Raft Replication</option>
+                    <option value="port_drop_9997">16. Firewall Drop: Port 9997 Drops Ingestion Traffic</option>
+                    <option value="wan_latency_spike">17. Inter-Site WAN Latency: Bucket Replication Times Out (9887)</option>
+                    <option value="hec_queue_overflow">18. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow</option>
                 </select>
                 <button class="sim-btn-trigger" onclick="runSimulation()">Inject Outage</button>
                 <button class="sim-btn-reset" onclick="resetSimulation()">Reset Topology</button>
@@ -431,6 +451,7 @@
                     <rect x="810" y="20" width="220" height="840" class="mgmt-column-bg"/>
                     <text x="825" y="44" class="tier-title" fill="#c084fc">Management Plane</text>
 
+                    <!-- SHC Deployer -->
                     <g class="node" id="node-shc_deployer" onclick="selectComponent('shc_deployer')">
                         <rect x="825" y="65" width="190" height="110" stroke="#f43f5e"/>
                         <path d="M 837 77 l 5 -3 l 5 3 l -5 3 z M 837 80 l 5 3 l 0 6 l -5 -3 z M 847 80 l -5 3 l 0 6 l 5 -3 z" fill="none" stroke="#f43f5e" stroke-width="1.2"/>
@@ -440,6 +461,7 @@
                         <text x="835" y="155" class="desc" fill="#f43f5e">shcluster/apps</text>
                     </g>
 
+                    <!-- Cluster Manager -->
                     <g class="node" id="node-cm" onclick="selectComponent('cm')">
                         <rect x="825" y="325" width="190" height="120" stroke="#c084fc"/>
                         <circle cx="840" cy="341" r="3.5" fill="none" stroke="#c084fc" stroke-width="1.2"/>
@@ -452,6 +474,7 @@
                         <text x="835" y="422" class="desc" fill="#c084fc">master-apps / _cluster</text>
                     </g>
 
+                    <!-- Deployment Server -->
                     <g class="node" id="node-ds" onclick="selectComponent('ds')">
                         <rect x="825" y="590" width="190" height="105" stroke="#f97316"/>
                         <rect x="835" y="601" width="10" height="8" rx="1" fill="none" stroke="#f97316" stroke-width="1.2"/>
@@ -462,6 +485,7 @@
                         <text x="835" y="675" class="desc" fill="#f97316">deployment-apps</text>
                     </g>
 
+                    <!-- License Manager -->
                     <g class="node" id="node-lm" onclick="selectComponent('lm')">
                         <rect x="825" y="720" width="190" height="90" stroke="#64748b"/>
                         <rect x="835" y="731" width="10" height="12" rx="1.5" fill="none" stroke="#64748b" stroke-width="1.2"/>
@@ -471,6 +495,7 @@
                         <text x="835" y="785" class="desc" fill="#94a3b8">Daily Ingest Tracking</text>
                     </g>
 
+                    <!-- Control Sync Lines -->
                     <path id="pipe-deployer-shc" d="M 825 120 L 700 120" stroke="#f43f5e" stroke-dasharray="3 3"/>
                     <text x="720" y="112" font-size="9" fill="#f43f5e">shcluster-bundle</text>
 
@@ -480,6 +505,7 @@
                     <path id="pipe-ds-uf" d="M 825 645 L 700 645" stroke="#f97316" stroke-dasharray="3 3"/>
                     <text x="728" y="637" font-size="9" fill="#f97316">phoneHome</text>
 
+                    <!-- Tier 3: Search Head Cluster -->
                     <rect x="20" y="20" width="680" height="200" class="tier-bg"/>
                     <text x="35" y="44" class="tier-title">Tier 3: Search Head Cluster (SHC) - WLM, Search Affinity & KV Store</text>
 
@@ -518,10 +544,12 @@
                         <text x="495" y="186" class="desc" fill="#10b981">distsearch.conf: site2</text>
                     </g>
 
+                    <!-- Search Dispatch Pipelines -->
                     <path id="pipe-shc-site1" d="M 140 280 L 140 220" stroke="#38bdf8" class="pipe-line"/>
                     <path id="pipe-shc-site2" d="M 580 280 L 580 220" stroke="#38bdf8" class="pipe-line"/>
                     <text x="240" y="250" font-size="10" fill="#38bdf8">Search Affinity: Local Search Factor Read (Zero WAN Traffic)</text>
 
+                    <!-- Tier 2: Indexer Cluster -->
                     <rect x="20" y="280" width="680" height="240" class="tier-bg"/>
                     <text x="35" y="304" class="tier-title">Tier 2: Multi-Site Indexer Cluster (Hot/Warm/TSIDX & Inter-Site WAN Replication)</text>
 
@@ -554,22 +582,25 @@
                     <g class="node" id="node-smartstore" onclick="selectComponent('smartstore')">
                         <rect x="485" y="325" width="200" height="175" stroke="#facc15"/>
                         <path d="M 495 344 a 3 3 0 0 1 5 -2 a 4 4 0 0 1 7 1 a 3 3 0 0 1 4 3 a 2 2 0 0 1 -2 2 l -13 0 a 2 2 0 0 1 -1 -4 z" fill="none" stroke="#facc15" stroke-width="1.2"/>
-                        <text x="516" y="347" class="title">SmartStore (Remote Tier)</text>
+                        <text x="516" y="347" class="title">SmartStore (VAST/MinIO/S3)</text>
                         <text x="495" y="370" class="desc">Canonical Object Storage</text>
-                        <text x="495" y="390" class="desc">AWS S3 / GCS / Azure Blob</text>
+                        <text x="495" y="390" class="desc">VAST Data Flash / MinIO / S3</text>
                         <text x="495" y="415" class="desc" fill="#facc15">Warm/Cold Remote Offload</text>
                         <text x="495" y="435" class="desc" fill="#94a3b8">CacheManager LRU Eviction</text>
                         <text x="495" y="460" class="desc" fill="#94a3b8">Single Storage Copy Across Sites</text>
                         <text x="495" y="480" class="desc" fill="#38bdf8">Fetches metadata on demand</text>
                     </g>
 
+                    <!-- Inter-Site WAN Replication Pipeline -->
                     <path id="pipe-idx-wan" d="M 240 412 L 260 412" stroke="#10b981" stroke-width="2" class="pipe-line"/>
 
+                    <!-- Ingestion Pipeline -->
                     <path id="pipe-uf-site1" d="M 140 580 L 140 520" stroke="#10b981" class="pipe-line"/>
                     <path id="pipe-hf-site2" d="M 360 580 L 360 520" stroke="#10b981" class="pipe-line"/>
                     <path id="pipe-hec-smart" d="M 580 580 L 580 520" stroke="#10b981" class="pipe-line"/>
                     <text x="260" y="555" font-size="10" fill="#10b981">Cooked Ingestion Stream (Port 9997 AutoLB + useACK=true)</text>
 
+                    <!-- Tier 1: Ingestion Tier -->
                     <rect x="20" y="580" width="680" height="280" class="tier-bg"/>
                     <text x="35" y="604" class="tier-title">Tier 1: Ingestion Tier (Forwarders, Ingress & Topology Expansion)</text>
 
@@ -721,6 +752,9 @@
                 distsearchDetails: "The Search Head compiles queries into a MapReduce bundle, checks index availability, and dispatches sub-searches over Port 8089 to local indexer peers. Peers return transformed results (summarized chunks) rather than raw logs, drastically reducing network transmission.",
                 koDetails: "Runtime Knowledge Objects (Dashboards, Saved Searches, Lookups) are written to $SPLUNK_HOME/etc/users/<user>/ or $SPLUNK_HOME/etc/apps/<app>/local/ and replicated dynamically across members via Raft consensus on Port 8089.",
                 kvstoreDetails: "KV Store operates as an independent MongoDB Replica Set listening on Port 8191. Captaincy in Raft does not strictly dictate the MongoDB primary. Triage status using `splunk show kvstore-status`.",
+                mcWorkflow: "When SPL is optimal but searches lag: 1) Check SH 'Search Activity: Instance' in MC for concurrency limits (`max_hist_searches`). 2) Check 'Resource Usage: Indexer' for I/O Wait (`iostat -x %util > 80%`). 3) Check Job Inspector scanCount vs resultCount: If scanCount >> resultCount (e.g., 1M scanned for 10 returned), user lacks index/time scoping. 4) Verify if SmartStore S3/VAST endpoint throttling is delaying bucket downloads.",
+                summaryIndexing: "Summary Indexing shifts computational load from search-time to index-time. Rather than running raw 'all-time' TSIDX scans on multi-terabyte indexes, scheduled searches populate lightweight summary indexes (`collect` or `sistats`), dramatically reducing search head CPU contention and supporting higher concurrency.",
+                orphanedKOs: "Audit orphaned knowledge objects via REST API: `| rest /servicesNS/-/-/saved/searches | search is_scheduled=1 disabled=0 | join type=outer eai:acl.owner [| rest /services/authentication/users | fields name | rename name as eai:acl.owner | eval active=1] | where isnull(active)`.",
                 triage: ["splunk show shcluster-status", "splunk show kvstore-status", "splunk check-wlm-config", "splunk transfer shcluster-captain -mgr-uri https://<target>:8089"]
             },
             "sh_member": {
@@ -742,6 +776,7 @@
                 forwarderInteraction: "Forwarders connect via Port 9997 using TCP cooked pipelines. When `useACK=true`, the forwarder holds events in memory until the peer indexer flushes the raw slice to disk journal.",
                 replicationDetails: "Once data enters a hot bucket, the indexer streams raw data copies across local peers (`site1:2`) and across the WAN pipe over Port 9887 to Site 2 peers (`site2:2`). Searchable indexers build local `.tsidx` inverted files to satisfy the `site_search_factor`.",
                 newIndexersAdded: "When a new indexer joins: 1) Configure `server.conf` with `mode=peer`, `master_uri`, `pass4SymmKey`, and `site=site1`. 2) Restart Splunk. 3) CM detects peer, registers heartbeats, triggers cluster bundle download from `master-apps`, and begins streaming bucket fixup tasks without restarting the existing cluster.",
+                frozenStorage: "By default, frozen buckets are deleted. To preserve them for compliance without consuming license, configure `coldToFrozenDir = /mnt/archive/splunk/` or `coldToFrozenScript` in `indexes.conf`.",
                 triage: ["index=_internal sourcetype=splunkd component=BucketReplicator", "splunk list search-server"]
             },
             "idx_site2": {
@@ -754,11 +789,11 @@
                 triage: ["index=_internal sourcetype=splunkd peer_site=site2", "splunk show cluster-status"]
             },
             "smartstore": {
-                name: "SmartStore Remote Tiering (S3 / GCS / Azure)",
+                name: "SmartStore Remote Tiering (VAST / MinIO / S3)",
                 tier: "Tier 2: Remote Decoupled Storage Tier",
                 configs: ["$SPLUNK_HOME/etc/system/local/indexes.conf (remotePath = volume:remote_store/$_index_name)", "$SPLUNK_HOME/etc/system/local/server.conf ([cachemanager])"],
-                affinityDetails: "SmartStore stores canonical copies of warm buckets in Cloud Object Storage. Searches leverage local cache; misses fetch metadata chunks from S3.",
-                distsearchDetails: "Decouples storage from compute: Indexers need only retain local NVMe for hot data and cached warm buckets (`max_cache_size`).",
+                affinityDetails: "SmartStore stores canonical copies of warm buckets in Cloud Object Storage. Searches leverage local NVMe cache; cache misses fetch metadata chunks from S3, MinIO, or VAST Data flash arrays over internal HTTPS APIs.",
+                distsearchDetails: "Decouples storage from compute: Indexers need only retain local NVMe for hot data and cached warm buckets (`max_cache_size`). VAST Data all-flash object stores provide ultra-low latency, reducing cache miss search penalties compared to public cloud S3.",
                 koDetails: "Bucket metadata manifests are maintained remotely and cached locally.",
                 triage: ["index=_internal sourcetype=splunkd component=CacheManager", "index=_internal sourcetype=splunkd component=S3BucketStorage"]
             },
@@ -776,6 +811,7 @@
                 tier: "Tier 1: Data Ingestion Tier",
                 configs: ["$SPLUNK_HOME/etc/system/local/props.conf", "$SPLUNK_HOME/etc/system/local/transforms.conf", "$SPLUNK_HOME/etc/apps/"],
                 forwarderInteraction: "Performs UTF-8 line breaking and regex evaluations. Routes unwanted logs to `nullQueue` and masks sensitive data (`SEDCMD`) before sending cooked events to indexers over Port 9997.",
+                cimCompliance: "HFs normalize data to the Common Information Model (CIM) before indexing by extracting standardized field names (e.g., mapping Windows `host` or Linux `hostname` to `dest`). This ensures enterprise security correlation searches run without custom query overhead.",
                 newForwardersAdded: "Managed via Deployment Server classes similar to UFs.",
                 koDetails: "Hosts index-time parsing KOs only.",
                 triage: ["index=_internal sourcetype=splunkd group=queue name=parsingqueue", "splunk btool props list --debug"]
@@ -803,7 +839,7 @@
                 tier: "Control & Management Plane (Indexers)",
                 configs: ["$SPLUNK_HOME/etc/system/local/server.conf ([clustering])", "$SPLUNK_HOME/etc/master-apps/ (or _cluster/apps)"],
                 newIndexersAdded: "Registers new indexer peers, validates `pass4SymmKey`, checks site affinity, pushes cluster bundles, and triggers data fixup replication.",
-                commands: ["Validate Bundle: `splunk validate cluster-bundle`", "Apply Bundle: `splunk apply cluster-bundle --answer-yes`", "Check Cluster Health: `splunk show cluster-status --verbose`", "Rolling Restart: `splunk rolling-restart cluster-peers`"],
+                commands: ["Validate Bundle: `splunk validate cluster-bundle`", "Apply Bundle: `splunk apply cluster-bundle --answer-yes`", "Check Cluster Health: `splunk show cluster-status --verbose`", "Rolling Restart: `splunk rolling-restart cluster-peers`", "Enter Maintenance Mode: `splunk set maintenance-mode 1`"],
                 koDetails: "Distributes indexing-time props/transforms and indexes.conf to peer indexers.",
                 triage: ["Review fixup tasks: `/services/cluster/manager/health`"]
             },
@@ -854,6 +890,18 @@
                 `;
             }
 
+            let mcSection = "";
+            if (data.mcWorkflow) {
+                mcSection = `
+                    <div class="card">
+                        <div class="card-heading">Monitoring Console (MC) Triage & Summary Indexing</div>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;"><b>Hardware Bottleneck Triage:</b> ${data.mcWorkflow}</p>
+                        <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;"><b>Summary Indexing Advantage:</b> ${data.summaryIndexing}</p>
+                        ${data.orphanedKOs ? `<p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;"><b>Orphaned Knowledge Object Audit:</b><br><code>${data.orphanedKOs}</code></p>` : ''}
+                    </div>
+                `;
+            }
+
             let wlmSection = "";
             if (data.wlmDetails) {
                 wlmSection = `
@@ -892,6 +940,8 @@
                         <div class="card-heading">Forwarder-to-Indexer Communication & Ingestion</div>
                         <p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45;">${data.forwarderInteraction}</p>
                         ${data.replicationDetails ? `<p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;"><b>Inter-Site Bucket Replication:</b> ${data.replicationDetails}</p>` : ''}
+                        ${data.frozenStorage ? `<p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;"><b>Frozen Data Archival:</b> ${data.frozenStorage}</p>` : ''}
+                        ${data.cimCompliance ? `<p style="font-size: 0.81rem; color: #cbd5e1; line-height: 1.45; margin-top:8px;"><b>CIM Compliance Normalization:</b> ${data.cimCompliance}</p>` : ''}
                     </div>
                 `;
             }
@@ -925,6 +975,7 @@
                     ${data.configs.map(cfg => `<div class="code-box">${cfg}</div>`).join('')}
                 </div>
 
+                ${mcSection}
                 ${wlmSection}
                 ${affinitySection}
                 ${kvstoreSection}
@@ -959,7 +1010,7 @@
                         <button class="packet-stage-btn" onclick="setPacketStage(2)">Stage 2: Cooked AutoLB</button>
                         <button class="packet-stage-btn" onclick="setPacketStage(3)">Stage 3: Hot Slice</button>
                         <button class="packet-stage-btn" onclick="setPacketStage(4)">Stage 4: WAN Replicate</button>
-                        <button class="packet-stage-btn" onclick="setPacketStage(5)">Stage 5: SmartStore S3</button>
+                        <button class="packet-stage-btn" onclick="setPacketStage(5)">Stage 5: SmartStore S3/VAST</button>
                     </div>
                 </div>
                 <div class="card" id="packetStageDetails"></div>
@@ -989,8 +1040,8 @@
                 nodes: ["node-idx_site1", "node-idx_site2"]
             },
             5: {
-                title: "Stage 5: Hot-to-Warm Roll & SmartStore Remote Upload",
-                desc: "When the hot bucket reaches `maxDataSize` (10GB) or time limits, it rolls to warm. SmartStore uploads the compressed journal and TSIDX files directly to remote S3/GCS object storage via multi-part API calls, leaving a local cached copy governed by CacheManager.",
+                title: "Stage 5: Hot-to-Warm Roll & SmartStore Remote Upload (VAST/MinIO/S3)",
+                desc: "When the hot bucket reaches `maxDataSize` (10GB) or time limits, it rolls to warm. SmartStore uploads the compressed journal and TSIDX files directly to high-throughput flash object storage (like VAST Data or MinIO) via S3 multi-part API calls, leaving a local cached copy governed by CacheManager.",
                 nodes: ["node-idx_site1", "node-smartstore"]
             }
         };
@@ -1019,6 +1070,15 @@
                 <div class="card">
                     <div class="card-heading">Sample Enterprise SPL Query</div>
                     <div class="code-box">index=security action=blocked | stats count by src_ip</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-heading">Search Efficiency Ratio (Job Inspector Rule)</div>
+                    <p style="font-size:0.81rem; color:#cbd5e1; line-height:1.45;">
+                        <b>Efficiency = resultCount / scanCount</b><br>
+                        • If <code>scanCount >> resultCount</code> (e.g., 1,000,000 scanned for 10 results returned), the search is hitting disk I/O bottlenecks because it lacks tight index or timestamp scoping.<br>
+                        • Fast searches have an efficiency ratio approaching 1:1, utilizing TSIDX bloom filters.
+                    </p>
                 </div>
 
                 <div class="card">
@@ -1179,6 +1239,86 @@
         }
 
         const stanzaTemplates = {
+            "indexes_smartstore_vast": {
+                name: "indexes.conf (SmartStore with VAST Data / MinIO)",
+                file: "$SPLUNK_HOME/etc/master-apps/_cluster/indexes.conf",
+                code: `[default]
+remotePath = volume:remote_store/$_index_name
+repFactor = auto
+
+[volume:remote_store]
+storageType = remote
+# VAST Data all-flash or MinIO on-prem endpoint
+path = s3://splunk-vast-flash-bucket/storage/
+remote.s3.endpoint = https://vast-storage.corp.internal:8000
+remote.s3.signature_version = v4
+remote.s3.auth_region = us-east-1
+
+[pan_traffic]
+homePath = $SPLUNK_DB/pan_traffic/db
+coldPath = $SPLUNK_DB/pan_traffic/colddb
+thawedPath = $SPLUNK_DB/pan_traffic/thaweddb
+maxDataSize = auto_high_volume
+maxGlobalDataSizeMB = 5000000
+frozenTimePeriodInSecs = 7776000`
+            },
+            "cim_field_normalization": {
+                name: "props.conf (Common Information Model CIM Aliases)",
+                file: "$SPLUNK_HOME/etc/apps/<app>/local/props.conf",
+                code: `[cisco:asa]
+# Normalizes vendor fields to CIM standards
+FIELDALIAS-src = src_ip AS src
+FIELDALIAS-dest = dest_ip AS dest
+FIELDALIAS-dpt = dst_port AS dest_port
+EVAL-vendor = "Cisco"
+EVAL-product = "ASA"
+LOOKUP-action = cisco_action_lookup vendor_action OUTPUT action`
+            },
+            "indexes_frozen_archive": {
+                name: "indexes.conf (Frozen Archival Retention)",
+                file: "$SPLUNK_HOME/etc/master-apps/_cluster/indexes.conf",
+                code: `[compliance_audit]
+homePath = $SPLUNK_DB/compliance_audit/db
+coldPath = $SPLUNK_DB/compliance_audit/colddb
+thawedPath = $SPLUNK_DB/compliance_audit/thaweddb
+maxDataSize = auto_high_volume
+frozenTimePeriodInSecs = 7776000
+# Archive to external mount instead of deleting
+coldToFrozenDir = /mnt/nas_archive/splunk_frozen/compliance_audit/`
+            },
+            "serverclass_ds_isolation": {
+                name: "serverclass.conf (Deployment Server Tier Isolation)",
+                file: "$SPLUNK_HOME/etc/system/local/serverclass.conf",
+                code: `[global]
+repositoryLocation = $SPLUNK_HOME/etc/deployment-apps
+
+# Heavy Forwarder Parsing Apps ONLY - NEVER push to Search Heads
+[serverClass:Tier_HeavyForwarders]
+whitelist.0 = hf-*.corp.internal
+[serverClass:Tier_HeavyForwarders:app:TA_parsing_props_transforms]
+stateOnClient = enabled
+restartSplunkd = true
+
+# Universal Forwarder Collection Apps ONLY
+[serverClass:Tier_UniversalForwarders]
+whitelist.0 = web-*.corp.internal
+[serverClass:Tier_UniversalForwarders:app:Splunk_TA_inputs_outputs]
+stateOnClient = enabled`
+            },
+            "data_drift_alerting": {
+                name: "Data Drift & Silent Volume Drop Alert (SPL)",
+                file: "$SPLUNK_HOME/etc/apps/<app>/local/savedsearches.conf",
+                code: `[Alert - Critical Ingestion Drop 70 Percent]
+search = index=_internal source=*metrics.log group=per_sourcetype_thruput \\
+| eval MB = kb / 1024 \\
+| timechart span=1h sum(MB) as hourly_mb by series \\
+| predict hourly_mb as predicted_mb algorithm=LLP \\
+| eval drop_pct = (predicted_mb - hourly_mb) / predicted_mb * 100 \\
+| where drop_pct > 70 AND hourly_mb == 0
+cron_schedule = 15 * * * *
+alert.severity = 4
+alert.suppress = 1`
+            },
             "wlm_pools_rules": {
                 name: "Workload Management (workload_pools & workload_rules)",
                 file: "$SPLUNK_HOME/etc/system/local/workload_pools.conf & workload_rules.conf",
@@ -1226,27 +1366,6 @@ sslRootCAPath = /opt/splunkforwarder/etc/auth/certs/corp_ca.pem
 sslVerifyServerCert = true
 sslCommonNameToCheck = indexer*.corp.internal`
             },
-            "indexes_smartstore": {
-                name: "indexes.conf (SmartStore + Multi-Site Replication)",
-                file: "$SPLUNK_HOME/etc/master-apps/_cluster/indexes.conf",
-                code: `[default]
-remotePath = volume:remote_store/$_index_name
-repFactor = auto
-
-[volume:remote_store]
-storageType = remote
-path = s3://splunk-prod-cluster-bucket/storage/
-remote.s3.endpoint = https://s3.us-west-2.amazonaws.com
-remote.s3.auth_region = us-west-2
-
-[pan_traffic]
-homePath = $SPLUNK_DB/pan_traffic/db
-coldPath = $SPLUNK_DB/pan_traffic/colddb
-thawedPath = $SPLUNK_DB/pan_traffic/thaweddb
-maxDataSize = auto_high_volume
-maxGlobalDataSizeMB = 5000000
-frozenTimePeriodInSecs = 7776000`
-            },
             "outputs_indexer_discovery": {
                 name: "outputs.conf (Indexer Discovery + AutoLB + ACK)",
                 file: "$SPLUNK_HOME/etc/apps/Splunk_TA_outputs/local/outputs.conf",
@@ -1262,70 +1381,6 @@ useACK = true
 
 [tcpout]
 defaultGroup = prod_cluster`
-            },
-            "distsearch_affinity": {
-                name: "distsearch.conf (Search Affinity & Replication Blacklist)",
-                file: "$SPLUNK_HOME/etc/system/local/distsearch.conf",
-                code: `[distributedSearch]
-[replicationBlacklist]
-large_csvs = apps/*/lookups/*.csv
-sample_data = apps/*/samples/*
-
-[distributedSearch:connection]
-connectTimeout = 10
-receiveTimeout = 30`
-            },
-            "serverclass_deployer": {
-                name: "serverclass.conf (Deployment Server Forwarder Delivery)",
-                file: "$SPLUNK_HOME/etc/system/local/serverclass.conf",
-                code: `[global]
-repositoryLocation = $SPLUNK_HOME/etc/deployment-apps
-
-[serverClass:Production_Webservers]
-whitelist.0 = web-prod-*.corp.internal
-whitelist.1 = 10.10.40.*
-restartSplunkd = true
-
-[serverClass:Production_Webservers:app:Splunk_TA_apache]
-stateOnClient = enabled
-
-[serverClass:Production_Webservers:app:Splunk_TA_outputs]
-stateOnClient = enabled`
-            },
-            "props_transforms_masking": {
-                name: "props.conf & transforms.conf (Data Masking + nullQueue)",
-                file: "$SPLUNK_HOME/etc/apps/<app>/local/props.conf & transforms.conf",
-                code: `# props.conf
-[cisco:asa]
-SHOULD_LINEMERGE = false
-LINE_BREAKER = ([\\r\\n]+)
-TIME_PREFIX = ^
-TRANSFORMS-drop_teardown = filter_nullqueue
-TRANSFORMS-mask_ip = mask_sensitive_octets
-
-# transforms.conf
-[filter_nullqueue]
-REGEX = %ASA-6-302014
-DEST_KEY = queue
-FORMAT = nullQueue
-
-[mask_sensitive_octets]
-REGEX = (\\d{1,3}\\.\\d{1,3}\\.)\\d{1,3}\\.\\d{1,3}
-FORMAT = $1xxx.xxx
-DEST_KEY = _raw`
-            },
-            "server_multisite_cluster": {
-                name: "server.conf (Cluster Manager Multi-Site Definition)",
-                file: "$SPLUNK_HOME/etc/system/local/server.conf",
-                code: `[clustering]
-mode = manager
-multisite = true
-available_sites = site1,site2
-site = site1
-site_replication_factor = origin:2,total:3
-site_search_factor = origin:1,total:2
-pass4SymmKey = cluster_secret_key_123!
-cluster_label = prod_multisite_cluster`
             }
         };
 
@@ -1337,14 +1392,14 @@ cluster_label = prod_multisite_cluster`
                 <div class="card">
                     <div class="card-heading">Select Stanza Blueprint</div>
                     <select class="generator-select" id="templateSelect" onchange="updateGeneratedStanza()">
+                        <option value="indexes_smartstore_vast">indexes.conf (SmartStore + VAST Data / MinIO)</option>
+                        <option value="cim_field_normalization">props.conf (CIM Field Normalization & Aliases)</option>
+                        <option value="indexes_frozen_archive">indexes.conf (Frozen Archival Retention)</option>
+                        <option value="serverclass_ds_isolation">serverclass.conf (DS Tier Isolation - No SHC Leak)</option>
+                        <option value="data_drift_alerting">savedsearches.conf (Data Drift & Volume Drop Detection)</option>
                         <option value="wlm_pools_rules">workload_pools & workload_rules.conf (WLM)</option>
                         <option value="mtls_inputs_outputs">mTLS Pipeline (inputs.conf & outputs.conf)</option>
-                        <option value="indexes_smartstore">indexes.conf (SmartStore + Multi-Site)</option>
                         <option value="outputs_indexer_discovery">outputs.conf (Indexer Discovery + AutoLB)</option>
-                        <option value="distsearch_affinity">distsearch.conf (Search Affinity & Blacklists)</option>
-                        <option value="serverclass_deployer">serverclass.conf (Deployment Server)</option>
-                        <option value="props_transforms_masking">props.conf & transforms.conf (Masking / Routing)</option>
-                        <option value="server_multisite_cluster">server.conf (Multi-Site Cluster Definition)</option>
                     </select>
                     <div style="font-size:0.74rem; color:var(--text-muted); margin-bottom:4px;">Target File Location:</div>
                     <div class="code-box" id="templateLocation" style="color:var(--accent-orange); margin-bottom:8px;"></div>
@@ -1403,8 +1458,60 @@ cluster_label = prod_multisite_cluster`
         }
 
         const failureScenarios = {
+            "indexer_flapping": {
+                title: "01. Indexer Flapping: Network Latency / Re-replication Storm",
+                severPipes: ["pipe-idx-wan"],
+                alarmNodes: ["node-idx_site1"],
+                amberNodes: ["node-cm", "node-idx_site2"],
+                symptoms: ["Peer indexer repeatedly connects and drops from Cluster Manager.", "Cluster Manager schedules thousands of bucket fixups.", "Network saturated with replication traffic, degrading cluster search performance."],
+                recoverySteps: [
+                    "<b>Immediate Stabilization:</b> Place cluster in maintenance mode on CM: <br><code>splunk set maintenance-mode 1</code> (prevents cascading re-replication storms).",
+                    "Isolate flapping peer and check <code>splunkd.log</code> for heartbeat timeouts.",
+                    "Check network latency/NIC saturation on Port 9887: <code>mtr &lt;peer_ip&gt;</code>.",
+                    "Once network path is stabilized, disable maintenance mode: <code>splunk set maintenance-mode 0</code>."
+                ]
+            },
+            "ingest_flatline": {
+                title: "02. Ingestion Gap: Log Rotation / Permissions Lockout",
+                severPipes: ["pipe-uf-site1"],
+                alarmNodes: ["node-uf"],
+                amberNodes: ["node-idx_site1"],
+                symptoms: ["Application team reports logs stopped updating 2 hours ago.", "Index metrics show a flatline for specific sourcetype.", "No data arriving at indexers."],
+                recoverySteps: [
+                    "<b>Bottom-Up Triage:</b> 1) Verify application server log timestamp to confirm application is still writing logs.",
+                    "2) Check forwarder file read permissions and log rotation: <code>ls -la /var/log/app/</code>.",
+                    "3) Inspect fishbucket pointer: <code>splunk cmd btprobe -d $SPLUNK_HOME/var/lib/splunk/fishbucket/splunk_dirsize.db -k &lt;logfile&gt;</code>.",
+                    "4) Query internal throughput: <code>index=_internal source=*metrics.log group=per_sourcetype_thruput series=&lt;sourcetype&gt;</code>."
+                ]
+            },
+            "incomplete_search": {
+                title: "03. Incomplete Search Results: Job Inspector Search Peer Timeouts",
+                severPipes: ["pipe-shc-site1"],
+                alarmNodes: ["node-sh_captain"],
+                amberNodes: ["node-idx_site1"],
+                symptoms: ["Users report search results missing data across expected time range.", "Splunk Web displays warning: 'Search results might be incomplete'.", "Search peer timeout errors in dispatch."],
+                recoverySteps: [
+                    "<b>Job Inspector Triage:</b> Open Job Inspector and review the 'Search Peers' table.",
+                    "Identify specific indexer peer nodes reporting 'failed' or 'timed out'.",
+                    "Check target indexer OS I/O Wait and queue depths via Monitoring Console.",
+                    "Verify cluster replication health on CM: <code>splunk show cluster-status --verbose</code> (ensure no buckets are stuck in non-searchable fixup)."
+                ]
+            },
+            "deployer_leak": {
+                title: "04. Deployment Server Misconfiguration: Parsing Configs Leaking to SHC",
+                severPipes: ["pipe-ds-uf"],
+                alarmNodes: ["node-ds"],
+                amberNodes: ["node-sh_captain", "node-sh_member1"],
+                symptoms: ["Deployment Server targets push Heavy Forwarder parsing apps to Search Heads.", "Knowledge bundle size explodes, causing search dispatch replication lag.", "Memory and CPU saturation across search heads."],
+                recoverySteps: [
+                    "Audit <code>serverclass.conf</code> on Deployment Server to ensure Search Heads are never whitelisted for parsing-tier apps.",
+                    "Remove leaked props/transforms from <code>$SPLUNK_HOME/etc/apps/</code> on Search Heads.",
+                    "Reload deployment server: <code>splunk reload deploy-server</code>.",
+                    "Clean up dispatch replication bundles in <code>$SPLUNK_HOME/var/run/splunk/dispatch/</code>."
+                ]
+            },
             "site1_drop": {
-                title: "01. Disaster Recovery: Site 1 Peer Indexer Cluster Outage",
+                title: "05. Disaster Recovery: Site 1 Peer Indexer Cluster Outage",
                 severPipes: ["pipe-uf-site1", "pipe-shc-site1", "pipe-idx-wan"],
                 alarmNodes: ["node-idx_site1"],
                 amberNodes: ["node-cm", "node-idx_site2", "node-sh_captain"],
@@ -1417,7 +1524,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "captain_partition": {
-                title: "02. SHC Consensus: Captain Lost / Raft Quorum Split-Brain",
+                title: "06. SHC Consensus: Captain Lost / Raft Quorum Split-Brain",
                 severPipes: ["pipe-deployer-shc"],
                 alarmNodes: ["node-sh_captain"],
                 amberNodes: ["node-sh_member1", "node-sh_member2"],
@@ -1429,7 +1536,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "forwarder_block": {
-                title: "03. Ingestion Queue: Port 9997 Saturation / Blocked Pipe",
+                title: "07. Ingestion Queue: Port 9997 Saturation / Blocked Pipe",
                 severPipes: ["pipe-uf-site1"],
                 alarmNodes: ["node-uf"],
                 amberNodes: ["node-idx_site1"],
@@ -1442,7 +1549,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "smartstore_thrash": {
-                title: "04. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash",
+                title: "08. Storage Tier: S3 Rate Throttling & Cache Eviction Thrash",
                 severPipes: ["pipe-hec-smart"],
                 alarmNodes: ["node-smartstore"],
                 amberNodes: ["node-idx_site1", "node-idx_site2"],
@@ -1454,7 +1561,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "kvstore_sync_fail": {
-                title: "05. KV Store Engine: Port 8191 SSL Handshake Replica Timeout",
+                title: "09. KV Store Engine: Port 8191 SSL Handshake Replica Timeout",
                 severPipes: [],
                 alarmNodes: ["node-sh_captain", "node-sh_member1"],
                 amberNodes: ["node-sh_member2"],
@@ -1466,7 +1573,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "license_violation": {
-                title: "06. License Violations: 5 Daily Pool Breaches / Search Locked",
+                title: "10. License Violations: 5 Daily Pool Breaches / Search Locked",
                 severPipes: [],
                 alarmNodes: ["node-lm"],
                 amberNodes: ["node-sh_captain", "node-sh_member1", "node-sh_member2"],
@@ -1478,7 +1585,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "indexer_disk_full": {
-                title: "07. Peer Storage: minFreeSpace Breached (Ingestion Halted)",
+                title: "11. Peer Storage: minFreeSpace Breached (Ingestion Halted)",
                 severPipes: ["pipe-uf-site1", "pipe-hf-site2"],
                 alarmNodes: ["node-idx_site1"],
                 amberNodes: ["node-cm"],
@@ -1490,7 +1597,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "bucket_fixup_storm": {
-                title: "08. Indexer Cluster: Flapping Peer Triggers Fixup Storm",
+                title: "12. Indexer Cluster: Flapping Peer Triggers Fixup Storm",
                 severPipes: ["pipe-cm-idx", "pipe-idx-wan"],
                 alarmNodes: ["node-cm"],
                 amberNodes: ["node-idx_site1", "node-idx_site2"],
@@ -1502,7 +1609,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "deployer_conflict": {
-                title: "09. SHC Deployer: App Push Bundle Overwrites CSV Lookups",
+                title: "13. SHC Deployer: App Push Bundle Overwrites CSV Lookups",
                 severPipes: ["pipe-deployer-shc"],
                 alarmNodes: ["node-shc_deployer"],
                 amberNodes: ["node-sh_captain"],
@@ -1513,7 +1620,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "search_bundle_exhaust": {
-                title: "10. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space",
+                title: "14. Distsearch Bundle: Large CSVs Exhaust Peer /tmp Space",
                 severPipes: ["pipe-shc-site1", "pipe-shc-site2"],
                 alarmNodes: ["node-sh_captain"],
                 amberNodes: ["node-idx_site1", "node-idx_site2"],
@@ -1525,7 +1632,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "shc_out_of_sync": {
-                title: "11. Search Head Desync: Member Falls Out of Raft Replication",
+                title: "15. Search Head Desync: Member Falls Out of Raft Replication",
                 severPipes: [],
                 alarmNodes: ["node-sh_member2"],
                 amberNodes: ["node-sh_captain"],
@@ -1536,7 +1643,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "port_drop_9997": {
-                title: "12. Firewall Drop: Port 9997 Drops Ingestion Traffic",
+                title: "16. Firewall Drop: Port 9997 Drops Ingestion Traffic",
                 severPipes: ["pipe-uf-site1", "pipe-hf-site2"],
                 alarmNodes: ["node-uf", "node-hf"],
                 amberNodes: ["node-idx_site1"],
@@ -1548,7 +1655,7 @@ cluster_label = prod_multisite_cluster`
                 ]
             },
             "wan_latency_spike": {
-                title: "13. Inter-Site WAN Latency: Bucket Replication Times Out (9887)",
+                title: "17. Inter-Site WAN Latency: Bucket Replication Times Out (9887)",
                 severPipes: ["pipe-idx-wan"],
                 alarmNodes: ["node-idx_site1", "node-idx_site2"],
                 amberNodes: ["node-cm"],
@@ -1559,20 +1666,8 @@ cluster_label = prod_multisite_cluster`
                     "Enable replication compression: <code>compress_inter_site_replication = true</code> in <code>server.conf</code>."
                 ]
             },
-            "fishbucket_corrupt": {
-                title: "14. Forwarder Loop: Fishbucket Corruption Causes Re-indexing",
-                severPipes: [],
-                alarmNodes: ["node-uf"],
-                amberNodes: ["node-lm"],
-                symptoms: ["License usage spikes dramatically.", "Duplicate logs indexed across all dashboards."],
-                recoverySteps: [
-                    "Inspect fishbucket pointer: <code>splunk cmd btprobe -d $SPLUNK_HOME/var/lib/splunk/fishbucket/splunk_dirsize.db -k <file></code>",
-                    "To reset fishbucket without full data wipe, run: <code>splunk clean eventdata -index _fishbucket</code>",
-                    "Ensure monitored files are not being touched with new timestamps without new content."
-                ]
-            },
             "hec_queue_overflow": {
-                title: "15. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow",
+                title: "18. API Ingestion: HEC HTTP 503 Gateway Pipeline Overflow",
                 severPipes: ["pipe-hec-smart"],
                 alarmNodes: ["node-hec"],
                 amberNodes: ["node-idx_site1"],
@@ -1621,14 +1716,14 @@ cluster_label = prod_multisite_cluster`
 
         function renderSimulatorRunbook(scenario = null) {
             document.getElementById('sideTitle').innerText = "Failure Simulator Console";
-            document.getElementById('sideTag').innerText = "15 Enterprise Scenarios";
+            document.getElementById('sideTag').innerText = "18 Enterprise Scenarios";
 
             if (!scenario) {
                 document.getElementById('sideContent').innerHTML = `
                     <div class="card">
-                        <div class="card-heading">15 Enterprise Outage Scenarios</div>
+                        <div class="card-heading">18 Enterprise Outage Scenarios</div>
                         <p style="font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
-                            Use the top toolbar to inject simulated failures into the cluster. The canvas will animate severed network pipes, trigger alarms, and render diagnostic procedures.
+                            Select an interview-grade scenario above to trigger alarms, sever network pipes, and view step-by-step remediation procedures.
                         </p>
                     </div>
                 `;
@@ -1664,6 +1759,7 @@ cluster_label = prod_multisite_cluster`
                 splunkComponents[k].configs.some(c => c.toLowerCase().includes(val)) ||
                 (splunkComponents[k].affinityDetails && splunkComponents[k].affinityDetails.toLowerCase().includes(val)) ||
                 (splunkComponents[k].wlmDetails && splunkComponents[k].wlmDetails.toLowerCase().includes(val)) ||
+                (splunkComponents[k].mcWorkflow && splunkComponents[k].mcWorkflow.toLowerCase().includes(val)) ||
                 (splunkComponents[k].kvstoreDetails && splunkComponents[k].kvstoreDetails.toLowerCase().includes(val))
             );
 
